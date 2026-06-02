@@ -1,0 +1,2391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radar and Satellite Image Availability</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 120 120%22><text x=%2260%22 y=%2290%22 font-size=%2290%22 text-anchor=%22middle%22>📡</text></svg>">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 15px;
+            overflow-x: auto;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            position: relative;
+        }
+        .header {
+            text-align: left;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        .main-content {
+            display: flex;
+            gap: 12px;
+        }
+        .controls-area {
+            width: 178px;
+            flex-shrink: 0;
+        }
+        .visualization-area {
+            flex: 1;
+            min-width: 0;
+            background-color: white;
+            padding: 12px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .week-container {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            justify-content: left;
+        }
+        .day-container {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            max-width: 230px;
+        }
+        .day-header {
+            font-weight: bold;
+            text-align: center;
+            font-size: 12px;
+            white-space: nowrap;
+            padding: 4px 0;
+            background-color: #f1f1f1;
+            border-radius: 3px;
+            min-height: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 2px;
+        }
+        .day-header-date {
+            line-height: 1.2;
+            margin-top: 2px;
+        }
+        .availability-text {
+            color: #555;
+            font-size: 10px;
+            line-height: 1.2;
+            margin-bottom: 2px;
+            min-height: 14px;
+        }
+        .day-header.has-availability .availability-text {
+            visibility: visible;
+        }
+        .hour-labels {
+            display: grid;
+            grid-template-columns: 20px repeat(24, 8px);
+            gap: 1px;
+            margin-left: 4px;
+            position: relative;
+        }
+        .hour-label {
+            text-align: center;
+            font-size: 7px;
+            height: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: -25px;
+            color: #555;
+        }
+        .grid-container {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            position: relative;
+        }
+        .grid-row {
+            display: flex;
+            gap: 1px;
+            height: 8px;
+        }
+        .minute-label {
+            width: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 1px;
+            font-size: 7px;
+            color: #555;
+        }
+        .square {
+            width: 8px;
+            height: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            font-size: 6px;
+            font-weight: bold;
+            border-radius: 4px;
+            z-index: 2;
+        }
+        .grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .grid-line-vertical {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background-color: #97978F;
+            pointer-events: none;
+        }
+        .grid-line-horizontal {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background-color: #97978F;
+            pointer-events: none;
+        }
+        .no-data { background-color: #ff6b6b; }
+        .normal-scan { background-color: #8bc4d6; }
+        .rapid-scan { background-color: #90ee90; }
+        /* For single stations - both normal and rapid scan should be blue */
+        .single-station .normal-scan,
+        .single-station .rapid-scan {
+            background-color: #8bc4d6;
+        }
+        /* For LEGEND squares only - keep "?" centered */
+        .legend-item .legend-color.both-scan {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #2979ff;
+            color: white;
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+        }
+        /* For GRID squares only - shift "?" right */
+        .square.both-scan {
+            background-color: #2979ff;
+            color: white;
+            text-align: right;
+            padding-right: 2px;
+            padding-bottom: 1px;
+            line-height: 8px;
+            box-sizing: border-box;
+        }
+        .future {
+            background-color: #f0f0f0;
+        }
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 12px 0;
+            justify-content: center;
+            font-size: 11px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .legend-color {
+            width: 10px;
+            height: 10px;
+            border: 1px solid #ddd;
+            border-radius: 2px;
+        }
+        .legend-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+        .common-legend-item {
+            display: flex !important;
+        }
+        .nav-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: left;
+            margin: 12px 0;
+        }
+        .nav-button {
+            padding: 6px 12px;
+            background: #2979ff;
+            color: #fff;
+            border-radius: 4px;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 0.9em;
+            white-space: nowrap;
+            border: none;
+            cursor: pointer;
+        }
+        .nav-button:hover {
+            background: #1a68e6;
+        }
+        .maintenance-period-preventive {
+            background-color: #228B22 !important;
+        }
+        .maintenance-period-corrective {
+            background-color: #606060 !important;
+        }
+        .maintenance-period-restoration {
+            background-color: #2a5fb0 !important;
+        }
+        .combined-and { background-color: #8bc4d6; }
+        .combined-or { background-color: #8bc4d6; }
+        .combined-no-data { background-color: #ff6b6b; }
+        .tooltip {
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            padding: 6px;
+            width: 180px;
+            font-size: 12px;
+            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-radius: 3px;
+        }
+        .refresh-info {
+            text-align: center;
+            font-size: 11px;
+            color: #666;
+            margin-top: 8px;
+        }
+        .action-buttons {
+            position: absolute;
+            top: 5px;
+            right: 15px;
+            display: flex;
+            flex-direction: row;
+            gap: 8px;
+            align-items: center;
+        }
+        .maintenance-link {
+            padding: 6px 12px;
+            background-color: #6c757d;
+            color: white;
+            text-decoration: none;
+            border-radius: 3px;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .maintenance-link:hover {
+            background-color: #5a6268;
+        }
+        .refresh-button {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #2979ff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        .refresh-button:hover {
+            background-color: #1a68e6;
+        }
+        .refresh-button svg {
+            width: 16px;
+            height: 16px;
+        }
+        .calendar-container {
+            background-color: white;
+            padding: 10px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 12px;
+        }
+        .station-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            background-color: white;
+            padding: 10px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .station-button {
+            padding: 6px 10px;
+            background-color: #e9ecef;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        .station-button:hover {
+            background-color: #dee2e6;
+        }
+        .station-button.active {
+            background-color: #2979ff;
+            color: white;
+        }
+        .category-header {
+            font-weight: bold;
+            color: #333;
+            font-size: 11px;
+            margin: 8px 0 4px 0;
+            padding: 2px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        .category-header:first-child {
+            margin-top: 0;
+        }
+        .calendar-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-align: center;
+            font-size: 12px;
+        }
+        .calendar {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+        .calendar th {
+            padding: 4px 0;
+            text-align: center;
+            color: #555;
+        }
+        .calendar td {
+            padding: 3px 0;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        .calendar td:hover {
+            background-color: #e9ecef;
+        }
+        .calendar td.selected {
+            background-color: #2979ff;
+            color: white;
+            border-radius: 0;
+        }
+        .calendar td.other-month {
+            color: #aaa;
+        }
+        .calendar td.today {
+            background-color: #28a745;
+            color: white;
+            font-weight: bold;
+        }
+        .calendar td.today.selected {
+            background-color: #2979ff;
+            color: white;
+        }
+        .calendar-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .calendar-nav-button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            color: #2979ff;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .calendar-nav-button:hover {
+            background-color: #e9ecef;
+        }
+        .calendar-nav > div {
+            font-size: 12px;
+        }
+        .calendar-year-month {
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .calendar-year-month:hover {
+            background-color: #e9ecef;
+        }
+        .year-month-picker {
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            width: 200px;
+        }
+        .picker-section {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .picker-section:last-child {
+            border-bottom: none;
+        }
+        .picker-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+            font-size: 11px;
+            color: #666;
+        }
+        .picker-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2px;
+        }
+        .picker-option {
+            padding: 4px 6px;
+            cursor: pointer;
+            font-size: 11px;
+            text-align: center;
+            border-radius: 2px;
+        }
+        .picker-option:hover {
+            background-color: #e9ecef;
+        }
+        .picker-option.selected {
+            background-color: #2979ff;
+            color: white;
+        }
+        .today-button {
+            width: 100%;
+            padding: 4px 8px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 11px;
+            margin-top: 8px;
+        }
+        .today-button:hover {
+            background-color: #218838;
+        }
+        .data-source-info {
+            margin-top: 15px;
+            padding: 12px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            font-size: 12px;
+            border: 1px solid #eee;
+        }
+        .data-source-info h3 {
+            margin-top: 0;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 13px;
+        }
+        .data-source-info ul {
+            margin-top: 4px;
+            margin-bottom: 4px;
+            padding-left: 18px;
+        }
+        .nav-buttons-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .event-details {
+            background-color: white;
+            padding: 12px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 12px;
+            font-size: 12px;
+        }
+        .event-details h3 {
+            margin-top: 0;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 13px;
+        }
+        .close-button {
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            color: #666;
+            padding: 0 6px;
+        }
+        .close-button:hover {
+            color: #333;
+        }
+        .square-time {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-size: 10px;
+            white-space: nowrap;
+            z-index: 10;
+        }
+        .url-info {
+            background-color: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 15px;
+            font-size: 12px;
+            line-height: 1.6;  /* increases overall line height */
+        }
+        .url-info h4 {
+            margin-top: 0;
+            margin-bottom: 8px;
+            color: #0056b3;
+        }
+        .url-info code {
+            background-color: #f8f9fa;
+            padding: 3px 5px;  /* Increased from 2px 4px */
+            border-radius: 3px;
+            font-family: monospace;
+            line-height: 1.8;  /* gives more vertical space for monospace fonts */
+            display: inline-block;  /* ensures padding is respected vertically */
+            min-height: 20px;  /* ensures minimum height for characters */
+        }
+        .url-info ul {
+            margin-top: 4px;
+            margin-bottom: 4px;
+            padding-left: 18px;
+            line-height: 1.8;  /* more space for list items */
+        }
+        .url-info li {
+            margin-bottom: 4px;  /* spacing between list items */
+        }
+        /* Collapsible category styles */
+        details {
+            margin: 8px 0 4px 0;
+        }
+        details:first-of-type {
+            margin-top: 0;
+        }
+        summary {
+            font-weight: bold;
+            color: #333;
+            font-size: 11px;
+            padding: 2px 0;
+            border-bottom: 1px solid #ddd;
+            cursor: pointer;
+            list-style: none;
+        }
+        summary::-webkit-details-marker {
+            display: none;
+        }
+        summary::before {
+            content: "▼ ";
+            margin-right: 4px;
+        }
+        details:not([open]) summary::before {
+            content: "▶ ";
+        }
+        .category-content {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding-top: 6px;
+        }
+        .config-selector {
+            background-color: white;
+            padding: 10px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 12px;
+        }
+        .config-selector select {
+            width: 100%;
+            padding: 6px 8px;
+            font-size: 12px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            background-color: #f8f9fa;
+            cursor: pointer;
+        }
+        .config-selector select:hover {
+            border-color: #2979ff;
+        }
+    </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="header">Radar and Satellite Image Availability</h1>
+
+    <div class="action-buttons">
+      <a href="radsat_availability.html" class="nav-button" style="background-color: #0b63c6; color: white; transition: transform 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">📡🛰️ Availability</a>
+      <a href="maintenance.html" class="nav-button" target="_blank" style="transition: transform 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">🔧 Maintenance</a>
+      <a href="quarterly_report.html" class="nav-button" target="_blank" style="transition: transform 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">📊 Quarterly Report</a>
+    </div>
+
+    <div class="main-content">
+        <div class="controls-area">
+            <div class="calendar-container">
+                <div class="calendar-title">Start Date</div>
+                <div id="calendar"></div>
+                <button class="today-button" id="todayButton">Today</button>
+            </div>
+
+            <div class="config-selector">
+                <div class="calendar-title">Config</div>
+                <select id="configSelector">
+                    <!-- Options will be populated dynamically -->
+                </select>
+            </div>
+
+            <div class="station-buttons">
+                <!--div class="calendar-title">Image Type</div-->
+                <!-- Buttons will be added dynamically -->
+            </div>
+        </div>
+
+        <div class="visualization-area">
+            <div class="nav-buttons">
+                <button class="nav-button" id="prevWeek">◀ Previous Week</button>
+                <button class="nav-button" id="nextWeek">Next Week ▶</button>
+                <button id="refreshButton" class="refresh-button" title="Refresh data">
+                    <svg viewBox="0 0 24 24">
+                        <path fill="currentColor" d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"/>
+                    </svg>
+                </button>
+
+                <div id="timezoneDisplay" style="font-size: 14px; color: #666; margin-left: 8px; align-self: center;"></div>
+            </div>
+
+            <div id="currentStationDisplay" style="font-size: 13px; color: #555; margin: 8px 0; padding: 4px 8px; background-color: #f1f3f4; border-radius: 3px; font-weight: 500; display: inline-block;"></div>
+
+            <div id="resultsContainer"></div>
+
+            <div class="legend">
+                <div class="legend-group original-legend">
+                    <div class="legend-item">
+                        <div class="legend-color normal-scan"></div>
+                        <span>Normal Scan</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color rapid-scan"></div>
+                        <span>Rapid Scan</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color both-scan">?</div>
+                        <span>Both Scans</span>
+                    </div>
+                    <div class="legend-item maintenance-legend-preventive">
+                        <div class="legend-color maintenance-period-preventive"></div>
+                        <span>Preventive Maintenance</span>
+                    </div>
+                    <div class="legend-item maintenance-legend-corrective">
+                        <div class="legend-color maintenance-period-corrective"></div>
+                        <span>Non-preventive Maintenance</span>
+                    </div>
+                    <div class="legend-item maintenance-legend-restoration">
+                        <div class="legend-color maintenance-period-restoration"></div>
+                        <span>Data Restoration</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color no-data"></div>
+                        <span>No Data</span>
+                    </div>
+                    <div class="legend-item common-legend-item">
+                        <div class="legend-color future"></div>
+                        <span>Future Time</span>
+                    </div>
+                </div>
+                <div class="legend-group combined-legend" style="display: none;">
+                    <div class="legend-item">
+                        <div class="legend-color combined-and"></div>
+                        <span>Data Available</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color combined-no-data"></div>
+                        <span>No Data</span>
+                    </div>
+                    <div class="legend-item maintenance-legend-preventive">
+                        <div class="legend-color maintenance-period-preventive"></div>
+                        <span>Preventive Maintenance</span>
+                    </div>
+                    <div class="legend-item maintenance-legend-corrective">
+                        <div class="legend-color maintenance-period-corrective"></div>
+                        <span>Non-preventive Maintenance</span>
+                    </div>
+                    <div class="legend-item maintenance-legend-restoration">
+                        <div class="legend-color maintenance-period-restoration"></div>
+                        <span>Data Restoration</span>
+                    </div>
+                    <div class="legend-item common-legend-item">
+                        <div class="legend-color future"></div>
+                        <span>Future Time</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="refreshInfo" class="refresh-info"></div>
+
+            <div id="eventDetails" class="event-details" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3>Event Details</h3>
+                    <button id="closeEventDetails" class="close-button">×</button>
+                </div>
+                <div id="eventDetailsContent"></div>
+            </div>
+
+            <div class="data-source-info">
+                <div id="dataSourceDetails">
+                    <p>Select a station to see which radar images are being used for availability checks.</p>
+                </div>
+            </div>
+
+            <div class="url-info">
+                <h4>URL Parameters</h4>
+                <p>You can bookmark specific views using URL parameters:</p>
+                <ul>
+                    <li><code>config</code> - Set the config (e.g., <code>radsat_image</code>)</li>
+                    <li><code>station</code> - Set the station (e.g., <code>TMS</code>, <code>TCR</code>, <code>H8/9</code>)</li>
+                    <li><code>date</code> - Set the date in YYYY-MM-DD format</li>
+                </ul>
+                <p><strong>Example:</strong> <code>?config=radsat_image&station=H8/9&date=2026-01-15</code></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Global variables
+    let currentStartDate = new Date();
+    let refreshInterval = null;
+    let isAutoRefreshing = false;
+    let currentStation = '';
+    let currentCalendarDate = new Date();
+    let stationsConfig = {};
+    // Cache for maintenance data to avoid repeated requests
+    let maintenanceCache = new Map();
+    let cacheExpiry = 0;
+    const CACHE_DURATION = 60000; // 1 minute
+
+    // Updated stations configuration with categories and maintenance flags
+    const defaultStationsConfig = {
+        "TMS": {
+            "name": "TMS",
+            "type": "dual",
+            "category": "Radar",
+            "data_source": [
+                "Radar_TMS_EEC/CAPPI_Ref_64km",
+                "TMS_RAPID_SCAN/TMS_RS_PPI_Z_000_064"
+            ],
+            "description": "Normal Scan: TMS > CAPPI > 3km_R, 64km (Radar_TMS_EEC/CAPPI_Ref_64km)\nRapid Scan: TMS RS > RS PPI > dBZ(H), 64km (TMS_RAPID_SCAN/TMS_RS_PPI_Z_000_064)",
+            "timezone": "HKT",
+            "has_maintenance": false
+        },
+        "TMS (raw)": {
+            "name": "TMS (raw)",
+            "type": "single",
+            "category": "Radar",
+            "data_source": "../raw_file_list/TMS/6min_intervals_with_rapidscan",
+            "interval": 6,
+            "description": "Raw TMS data from /backup_data/TMS_IrisFormatRaw_archive (via radarop@rad19-t1), checks for raw data with the exact minutes 00, 06, 12, 18, 24, 30, 36, 42, 48, 54 at 6-minute intervals, with missing raw data filled by rapid scan data when available. Data is processed daily at 9:30 AM for the previous day, so current day data may not be available until the next morning.",
+            "timezone": "HKT",
+            "has_maintenance": true
+        },
+        "TCR": {
+            "name": "TCR",
+            "type": "dual",
+            "category": "Radar",
+            "data_source": [
+                "Radar_TCR/CAPPI_Ref_256km",
+                "Radar_TCR_rapid_scan/TCR_RS_Z_064km"
+            ],
+            "description": "Normal Scan: TCR > CAPPI > 3km_R, 256km (Radar_TCR/CAPPI_Ref_256km)\nRapid Scan: TCR RS > RS PPI > dBZ(H), 64km (Radar_TCR_rapid_scan/TCR_RS_Z_064km)",
+            "timezone": "HKT",
+            "has_maintenance": false
+        },
+        "TCR (raw)": {
+            "name": "TCR (raw)",
+            "type": "single",
+            "category": "Radar",
+            "data_source": "../raw_file_list/TCR/6min_intervals_with_rapidscan",
+            "interval": 6,
+            "description": "Raw TCR data from /backup_data/TCR_IrisFormatRaw_archive (via radarop@rad19-t1), checks for raw data with the exact minutes 00, 06, 12, 18, 24, 30, 36, 42, 48, 54 at 6-minute intervals, with missing raw data filled by rapid scan data when available. Data is processed daily at 9:30 AM for the previous day, so current day data may not be available until the next morning.",
+            "timezone": "HKT",
+            "has_maintenance": true
+        },
+        "Internet": {
+            "name": "Internet",
+            "type": "single",
+            "category": "Radar",
+            "data_source": "Internet/256km_old",
+            "interval": 6,
+            "description": "Internet > 天氣雷達圖像 > COM 3km_R, 256km (Internet/256km_old) (every 6 minutes)",
+            "timezone": "HKT",
+            "has_maintenance": false
+        },
+        "H8/9": {
+            "name": "H8/9",
+            "type": "single",
+            "category": "Satellite",
+            "data_source": "H08_Fook/x4M_IR1",
+            "interval": 10,
+            "description": "Himawari-8/9 > x4M > x4M IR1 (H08_Fook/x4M_IR1) (every 10 minutes)",
+            "timezone": "UTC",
+            "has_maintenance": false
+        },
+        "FY4B": {
+            "name": "FY4B",
+            "type": "single",
+            "category": "Satellite",
+            "data_source": "FY4B/IR1x4M",
+            "interval": 15,
+            "description": "FY4B > x4M (CMACast / KP) > IR1 (B13, 10.8μm) (FY4B/IR1x4M) (every 15 minutes)",
+            "timezone": "UTC",
+            "has_maintenance": false
+        },
+        "GK2A": {
+            "name": "GK2A",
+            "type": "single",
+            "category": "Satellite",
+            "data_source": "GK2A/IR_x2M",
+            "interval": 10,
+            "description": "GK2A-FD > x2M > IR1 (GK2A/IR_x2M) (every 10 minutes)",
+            "timezone": "UTC",
+            "has_maintenance": false
+        },
+        "Internet IR": {
+            "name": "Internet IR",
+            "type": "single",
+            "category": "Satellite",
+            "data_source": "Internet/H8_EasternAsia_IR",
+            "interval": 10,
+            "description": "Internet > Eastern Asia > IR (Internet/H8_EasternAsia_IR) (every 10 minutes)",
+            "timezone": "UTC",
+            "has_maintenance": true
+        },
+        "Internet IR (no maint)": {
+            "name": "Internet IR (no maint)",
+            "type": "single",
+            "category": "Satellite",
+            "data_source": "Internet/H8_EasternAsia_IR",
+            "interval": 10,
+            "description": "Internet > Eastern Asia > IR (Internet/H8_EasternAsia_IR) (every 10 minutes)",
+            "timezone": "UTC",
+            "has_maintenance": false
+        },
+        "Internet TC": {
+            "name": "Internet TC",
+            "type": "single",
+            "category": "Satellite",
+            "data_source": "Internet/H8_EasternAsia_TC",
+            "interval": 10,
+            "description": "Internet > Eastern Asia > TC (Internet/H8_EasternAsia_TC) (every 10 minutes)",
+            "timezone": "UTC",
+            "has_maintenance": false
+        },
+        "Internet DC": {
+            "name": "Internet DC",
+            "type": "single",
+            "category": "Satellite",
+            "data_source": "Internet/H8_EasternAsia_DC",
+            "interval": 10,
+            "description": "Internet > Eastern Asia > DC (Internet/H8_EasternAsia_DC) (every 10 minutes)",
+            "timezone": "UTC",
+            "has_maintenance": false
+        }
+    };
+
+    // Parse URL parameters
+    function parseURLParameters() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const result = {};
+        
+        // Parse config parameter
+        const configParam = urlParams.get('config');
+        if (configParam) {
+            // Add .json extension if not present
+            result.config = configParam.endsWith('.json') ? configParam : configParam + '.json';
+        }
+        
+        // Parse station parameter
+        const stationParam = urlParams.get('station');
+        if (stationParam) {
+            result.station = stationParam;
+        }
+        
+        // Parse date parameter (accepts both 'date' and 'startDate')
+        const dateParam = urlParams.get('date') || urlParams.get('startDate');
+        if (dateParam) {
+            try {
+                const parsedDate = new Date(dateParam + 'T00:00:00');
+                if (!isNaN(parsedDate.getTime())) {
+                    result.date = parsedDate;
+                }
+            } catch (error) {
+                console.warn('Invalid date parameter:', dateParam);
+            }
+        }
+        return result;
+    }
+
+    // Clear URL parameters
+    function clearURLParameters() {
+        if (window.location.search) {
+            const url = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.replaceState({}, document.title, url);
+        }
+    }
+
+    // Initialize with nearest Sunday
+    function getNearestSunday(date) {
+        const day = date.getDay();
+        const diff = date.getDate() - day;
+        const sunday = new Date(date);
+        sunday.setDate(diff);
+        sunday.setHours(0, 0, 0, 0);
+        return sunday;
+    }
+
+    // Load stations configuration (accept filename parameter)
+    async function loadStationsConfig(filename = 'radsat_availability_json/radsat_image.json') {
+        try {
+            const response = await fetch(filename);
+            if (!response.ok) throw new Error('Failed to load stations configuration');
+            return await response.json();
+        } catch (error) {
+            console.error('Error loading stations config:', error);
+            return defaultStationsConfig;
+        }
+    }
+
+    // Load available config files from index
+    async function loadConfigList() {
+        try {
+            const response = await fetch('radsat_availability_json/config-index.json');
+            if (!response.ok) throw new Error('Failed to load config list');
+            return await response.json();
+        } catch (error) {
+            console.error('Error loading config list:', error);
+            // Fallback to default configs
+            return {
+                configs: ['radsat_image.json'],
+                default: 'radsat_image.json'
+            };
+        }
+    }
+
+    // Populate config selector dropdown
+    async function populateConfigSelector(selectedConfig = null) {
+        const configList = await loadConfigList();
+        const selector = document.getElementById('configSelector');
+        selector.innerHTML = '';
+        
+        configList.configs.forEach(configFile => {
+            const option = document.createElement('option');
+            option.value = `radsat_availability_json/${configFile}`;
+            option.textContent = configFile.replace('.json', '');
+            selector.appendChild(option);
+        });
+        
+        // Set selected config (from URL or default)
+        if (selectedConfig) {
+            const configWithJson = selectedConfig.endsWith('.json') ? selectedConfig : selectedConfig + '.json';
+            const matchingOption = `radsat_availability_json/${configWithJson}`;
+            if (selector.querySelector(`option[value="${matchingOption}"]`)) {
+                selector.value = matchingOption;
+                return configWithJson;
+            }
+        }
+        
+        // Fallback to default
+        selector.value = `radsat_availability_json/${configList.default}`;
+        return configList.default;
+    }
+    
+    // Handle config change
+    async function changeConfigFile(filename) {
+        stationsConfig = await loadStationsConfig(filename);
+        if (!stationsConfig) {
+            stationsConfig = defaultStationsConfig;
+        }
+        // Reset to first station in new config
+        currentStation = Object.keys(stationsConfig)[0];
+        currentStartDate = getNearestSunday(new Date());
+        currentCalendarDate = new Date(currentStartDate);
+        closeEventDetails();
+        clearURLParameters();
+        createStationButtons();
+        updateDataSourceInfo();
+        updateLegendVisibility();
+        updateStationDisplay();
+        renderCalendar();
+        loadData();
+        // Update timezone display
+        document.getElementById('timezoneDisplay').textContent = `All times in ${stationsConfig[currentStation].timezone || 'HKT'}`;
+    }
+
+    // Update the station display
+    function updateStationDisplay() {
+        const station = stationsConfig[currentStation];
+        if (station) {
+            document.getElementById('currentStationDisplay').textContent = `${station.category}: ${station.name}`;
+        }
+    }
+
+    // Create station buttons dynamically with categories (preserve JSON order)
+    function createStationButtons() {
+        const container = document.querySelector('.station-buttons');
+        //container.innerHTML = '<div class="calendar-title">Image Type</div>';
+        container.innerHTML = '';
+        
+        // Group stations by category, preserving order of first appearance
+        const categories = {};
+        const categoryOrder = [];  // Track order
+        
+        Object.keys(stationsConfig).forEach(stationKey => {
+            const station = stationsConfig[stationKey];
+            const category = station.category || 'Other';
+            if (!categories[category]) {
+                categories[category] = [];
+                categoryOrder.push(category);  // Record first appearance order
+            }
+            categories[category].push({ key: stationKey, station });
+        });
+        
+        // Create sections for each category in JSON file order
+        categoryOrder.forEach(categoryName => {
+            const details = document.createElement('details');
+            details.open = true;
+            const summary = document.createElement('summary');
+            summary.textContent = categoryName;
+            details.appendChild(summary);
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'category-content';
+            
+            categories[categoryName].forEach(({ key: stationKey, station }) => {
+                const button = document.createElement('button');
+                button.className = 'station-button';
+                if (stationKey === currentStation) button.classList.add('active');
+                button.dataset.station = stationKey;
+                button.textContent = station.name;
+                button.addEventListener('click', function() {
+                    document.querySelectorAll('.station-button').forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    currentStation = this.dataset.station;
+                    closeEventDetails();
+                    clearURLParameters();
+                    checkAndSetAutoRefresh();
+                    loadData();
+                    updateDataSourceInfo();
+                    updateLegendVisibility();
+                    updateStationDisplay();
+                    const timezone = stationsConfig[currentStation].timezone || 'HKT';
+                    document.getElementById('timezoneDisplay').textContent = `All times in ${timezone}`;
+                });
+                contentDiv.appendChild(button);
+            });
+            
+            details.appendChild(contentDiv);
+            container.appendChild(details);
+        });
+    }
+
+    // Update legend visibility based on station maintenance support
+    function updateLegendVisibility() {
+        const station = stationsConfig[currentStation];
+        const stationType = station.type;
+        const hasMaintenance = station.has_maintenance;
+
+        const isCombinedView = ['and', 'or', 'single'].includes(stationType);
+        document.querySelector('.original-legend').style.display = isCombinedView ? 'none' : 'flex';
+        document.querySelector('.combined-legend').style.display = isCombinedView ? 'flex' : 'none';
+        document.querySelectorAll('.common-legend-item').forEach(item => {
+            item.style.display = isCombinedView ? 'none' : 'flex';
+        });
+
+        // Show/hide maintenance legend items based on station support
+        document.querySelectorAll('.maintenance-legend-preventive, .maintenance-legend-corrective, .maintenance-legend-restoration').forEach(item => {
+            item.style.display = hasMaintenance ? 'flex' : 'none';
+        });
+    }
+
+    // Update data source information
+    function updateDataSourceInfo() {
+        const detailsDiv = document.getElementById('dataSourceDetails');
+        const station = stationsConfig[currentStation];
+
+        if (!station) {
+            detailsDiv.innerHTML = '<p>Select a station to see which radar images are being used for availability checks.</p>';
+            return;
+        }
+
+        const formattedDescription = station.description.replace(/\n/g, '<br>');
+        detailsDiv.innerHTML = `
+            <h3>${station.name} Data Source</h3>
+            <p>${formattedDescription}</p>
+        `;
+    }
+
+    // Fetch data for a single day
+    async function fetchDayData(stationKey, date) {
+        const station = stationsConfig[stationKey];
+        if (!station) return { date, normalScanData: null, rapidScanData: null };
+
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+
+        const prevDate = new Date(date);
+        prevDate.setDate(date.getDate() - 1);
+        const prevYear = prevDate.getFullYear();
+        const prevMonth = String(prevDate.getMonth() + 1).padStart(2, '0');
+        const prevDay = String(prevDate.getDate()).padStart(2, '0');
+
+        // Get timezone for this station
+        const timezone = station.timezone || 'HKT';
+
+        // Generate file paths based on configuration
+        const filePaths = [];
+        const prevFilePaths = [];
+
+        if (station.type === 'single') {
+            // Handle single station with interval
+            if (station.data_source) {
+                filePaths.push(`http://radsats36/mnt/${station.data_source}/${year}${month}${day}/file_list.txt`);
+                prevFilePaths.push(`http://radsats36/mnt/${station.data_source}/${prevYear}${prevMonth}${prevDay}/file_list.txt`);
+            }
+        } else {
+            // Handle dual/and/or stations (original logic)
+            station.data_source.forEach(source => {
+                if (source) {
+                    filePaths.push(`http://radsats36/mnt/${source}/${year}${month}${day}/file_list.txt`);
+                    prevFilePaths.push(`http://radsats36/mnt/${source}/${prevYear}${prevMonth}${prevDay}/file_list.txt`);
+                }
+            });
+        }
+
+        try {
+            const fetchPromises = [
+                ...filePaths.map(path => fetchFileAvailability(path, timezone)),
+                ...prevFilePaths.map(path => fetchFileAvailability(path, timezone))
+            ];
+
+            const allData = await Promise.all(fetchPromises);
+
+            // Combine data based on station type
+            const result = { date, normalScanData: {}, rapidScanData: {} };
+
+            if (station.type === 'dual') {
+                result.normalScanData = {...allData[2], ...allData[0]};
+                result.rapidScanData = {...allData[3], ...allData[1]};
+            } else if (station.type === 'single') {
+                // For single stations, use either normalScanData or rapidScanData based on configuration
+                if (station.data_source) {
+                    result.normalScanData = {...allData[1], ...allData[0]};
+                }
+            }
+
+            return result;
+        } catch (error) {
+            console.error(`Error fetching data for ${stationKey} on ${year}-${month}-${day}:`, error);
+            return { date, normalScanData: null, rapidScanData: null };
+        }
+    }
+
+    // Fetch file availability
+    async function fetchFileAvailability(filePath, timezone = 'HKT') {
+        if (!filePath) return {};
+
+        try {
+            const path = filePath.replace('http://radsats36', '');
+            const response = await fetch(`http://radsats36:9000/api/proxy/file-list?path=${encodeURIComponent(path)}`);
+            if (!response.ok) return {};
+
+            const data = await response.text();
+            const lines = data.split('\n').filter(line => line.trim() !== '');
+            const availability = {};
+
+            for (let line of lines) {
+                // Handle both ":" and "_" as separators
+                let time, filename;
+                if (line.includes(':')) {
+                    [time, filename] = line.split(':');
+                } else if (line.includes('_')) {
+                    const firstUnderscore = line.indexOf('_');
+                    time = line.substring(0, firstUnderscore);
+                    filename = line.substring(firstUnderscore + 1);
+                } else {
+                    continue; // Skip malformed lines
+                }
+
+                const utcTimeStr = time.trim();
+                const utcDate = new Date(
+                    Date.UTC(
+                        parseInt(utcTimeStr.substring(0, 4)),
+                        parseInt(utcTimeStr.substring(4, 6)) - 1,
+                        parseInt(utcTimeStr.substring(6, 8)),
+                        parseInt(utcTimeStr.substring(8, 10)),
+                        parseInt(utcTimeStr.substring(10, 12))
+                    )
+                );
+
+                let timeKey;
+                if (timezone === 'UTC') {
+                    // For UTC timezone stations, use UTC time directly
+                    timeKey = utcTimeStr;
+                } else {
+                    // For HKT timezone stations, convert UTC to HKT
+                    const hktDate = new Date(utcDate.getTime() + 8 * 60 * 60 * 1000);
+                    timeKey =
+                        hktDate.getUTCFullYear() +
+                        String(hktDate.getUTCMonth() + 1).padStart(2, '0') +
+                        String(hktDate.getUTCDate()).padStart(2, '0') +
+                        String(hktDate.getUTCHours()).padStart(2, '0') +
+                        String(hktDate.getUTCMinutes()).padStart(2, '0');
+                }
+
+                availability[timeKey] = filename;
+            }
+
+            return availability;
+        } catch (error) {
+            console.error('Error processing file:', error);
+            return {};
+        }
+    }
+
+    // Helper to parse stored maintenance timestamps according to the period.timezone field.
+    // Returns a Date object representing the correct absolute time (UTC-based Date).
+    function parseTimestampWithTimezone(tsString, tz) {
+        // Accept ISO with Z already
+        if (!tsString) return null;
+        // If the string includes timezone info (ends with Z or +hh:mm), let Date parse it
+        if (/[zZ]$/.test(tsString) || /[+\-]\d{2}:\d{2}$/.test(tsString)) {
+            return new Date(tsString);
+        }
+        // Expect format "YYYY-MM-DDTHH:mm" (no timezone suffix) -- treat as local to the provided tz.
+        const parts = tsString.split('T');
+        if (parts.length !== 2) {
+            // fallback
+            return new Date(tsString);
+        }
+        const dateParts = parts[0].split('-').map(p => parseInt(p, 10));
+        const timeParts = parts[1].split(':').map(p => parseInt(p, 10));
+        const y = dateParts[0], m = dateParts[1], d = dateParts[2];
+        const hh = timeParts[0] || 0, mm = timeParts[1] || 0;
+
+        if (tz === 'UTC') {
+            // Interpret given timestamp as UTC
+            return new Date(Date.UTC(y, m - 1, d, hh, mm));
+        } else if (tz === 'HKT') {
+            // Interpret given timestamp as HKT (UTC+8). To get the correct UTC-based Date:
+            // create Date.UTC for the HKT values then subtract 8 hours.
+            return new Date(Date.UTC(y, m - 1, d, hh, mm) - (8 * 60 * 60 * 1000));
+        } else {
+            // Unknown timezone: fallback to treating as local-ish (but better than native parse)
+            return new Date(Date.UTC(y, m - 1, d, hh, mm));
+        }
+    }
+
+    // Determine the effective maintenance period for a given time slot.
+    // Data Restoration takes priority over Preventive/Non-preventive maintenance.
+    function getEffectiveMaintenance(currentTimeSlot, maintenancePeriods) {
+        const matchingPeriods = maintenancePeriods.filter(period => {
+            return currentTimeSlot >= period.startHKT && currentTimeSlot <= period.endHKT;
+        });
+
+        if (matchingPeriods.length === 0) return null;
+
+        // Data Restoration overrides all other types
+        const restoration = matchingPeriods.find(p => p.type === 'Data Restoration');
+        if (restoration) return restoration;
+
+        // Otherwise return the first matching period (Preventive or Corrective)
+        return matchingPeriods[0];
+    }
+
+    // Get CSS class for a maintenance period based on its type
+    function getMaintenanceClass(maintenance) {
+        if (maintenance.type === 'Data Restoration') {
+            return 'maintenance-period-restoration';
+        } else if (maintenance.type === 'Preventive Maintenance') {
+            return 'maintenance-period-preventive';
+        } else {
+            return 'maintenance-period-corrective';
+        }
+    }
+
+    // Create day display
+    function createDayDisplay(date, normalScanData, rapidScanData, container, isFutureDay, now, maintenancePeriods) {
+        const dayContainer = document.createElement('div');
+        dayContainer.className = 'day-container';
+
+        const dayStr = String(date.getDate()).padStart(2, '0');
+        const monthStr = String(date.getMonth() + 1).padStart(2, '0');
+        const weekdayStr = date.toLocaleDateString('en-US', { weekday: 'short' }).substring(0, 3);
+        const dateStr = `${dayStr}/${monthStr} ${weekdayStr}`;
+
+        const dayHeader = document.createElement('div');
+        dayHeader.className = 'day-header';
+
+        const dateText = document.createElement('div');
+        dateText.className = 'day-header-date';
+        dateText.textContent = dateStr;
+        dayHeader.appendChild(dateText);
+
+        dayContainer.appendChild(dayHeader);
+
+        const gridContainer = document.createElement('div');
+        gridContainer.className = 'grid-container';
+
+        // Add class for single stations
+        const station = stationsConfig[currentStation];
+        if (station && station.type === 'single') {
+            gridContainer.classList.add('single-station');
+        }
+
+        const hourLabels = document.createElement('div');
+        hourLabels.className = 'hour-labels';
+        hourLabels.appendChild(document.createElement('div'));
+
+        // Hour labels
+        for (let hour = 0; hour < 24; hour++) {
+            const label = document.createElement('div');
+            label.className = 'hour-label';
+            label.textContent = String(hour).padStart(2, '0');
+            hourLabels.appendChild(label);
+        }
+
+        gridContainer.appendChild(hourLabels);
+
+        const noDataForDay = normalScanData === null && rapidScanData === null && !isFutureDay;
+
+        // Get current time and today's date for comparison
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+        const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+        const isToday = dateStart.getTime() === todayStart.getTime();
+
+        // Get station configuration for timezone and interval
+        const interval = station?.interval || 6; // Default to 6 minutes if not specified
+        const timezone = station?.timezone || 'HKT'; // Default to HKT if not specified
+        const hasMaintenance = station?.has_maintenance || false;
+
+        function formatTimeForDisplay(date) {
+            if (timezone === 'UTC') {
+                return `${String(date.getUTCHours()).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')} UTC`;
+            } else {
+                // HKT is UTC+8
+                const hktDate = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+                return `${String(hktDate.getUTCHours()).padStart(2, '0')}:${String(hktDate.getUTCMinutes()).padStart(2, '0')} HKT`;
+            }
+        }
+
+        for (let minute = 0; minute < 60; minute++) {
+            const row = document.createElement('div');
+            row.className = 'grid-row';
+
+            const minuteLabel = document.createElement('div');
+            minuteLabel.className = 'minute-label';
+            minuteLabel.textContent = String(minute).padStart(2, '0');
+            row.appendChild(minuteLabel);
+
+            for (let hour = 0; hour < 24; hour++) {
+                const square = document.createElement('div');
+
+                // Create time slot based on station timezone
+                let currentTimeSlot;
+                if (timezone === 'UTC') {
+                    // For UTC stations, create time slot using local date values but in UTC
+                    currentTimeSlot = new Date(Date.UTC(
+                        date.getFullYear(),
+                        date.getMonth(),
+                        date.getDate(),
+                        hour,
+                        minute,
+                        0,
+                        0
+                    ));
+                } else {
+                    // For HKT stations, use local time
+                    currentTimeSlot = new Date(date);
+                    currentTimeSlot.setHours(hour, minute, 0, 0);
+                }
+
+                square.setAttribute('data-time', currentTimeSlot.toISOString());
+                square.style.position = 'relative';
+
+                let classes = ['square'];
+
+                // Time display on hover
+                square.addEventListener('mouseenter', function() {
+                    if (!this.timeDisplay) {
+                        this.timeDisplay = document.createElement('div');
+                        this.timeDisplay.className = 'square-time';
+                        this.timeDisplay.textContent = formatTimeForDisplay(currentTimeSlot);
+                        this.appendChild(this.timeDisplay);
+                    }
+                });
+
+                square.addEventListener('mouseleave', function() {
+                    if (this.timeDisplay) {
+                        this.removeChild(this.timeDisplay);
+                        this.timeDisplay = null;
+                    }
+                });
+
+                // Check maintenance periods only if station supports maintenance
+                if (hasMaintenance) {
+                    const maintenance = getEffectiveMaintenance(currentTimeSlot, maintenancePeriods);
+
+                    if (maintenance) {
+                        classes.push(getMaintenanceClass(maintenance));
+
+                        square.className = classes.join(' ');
+
+                        square.addEventListener('click', () => {
+                            showEventDetails(
+                                maintenance.type,
+                                maintenance.remarks,
+                                maintenance.user,
+                                maintenance.startHKT,
+                                maintenance.endHKT
+                            );
+                        });
+
+                        square.addEventListener('mouseenter', () => {
+                            showTooltip(square, maintenance.type, `${maintenance.remarks} (by ${maintenance.user})`);
+                        });
+                        row.appendChild(square);
+                        continue;
+                    }
+                }
+
+                // Check if future time - account for timezone
+                let isFutureTime = false;
+                if (isFutureDay) {
+                    isFutureTime = true;
+                } else if (isToday) {
+                    if (timezone === 'UTC') {
+                        // For UTC stations, compare UTC times directly
+                        const nowUTC = new Date();
+                        isFutureTime = currentTimeSlot > nowUTC;
+                    } else {
+                        // For HKT stations, compare local times
+                        isFutureTime = currentTimeSlot > now;
+                    }
+                }
+
+                if (isFutureTime) {
+                    classes.push('future');
+                } else if (noDataForDay) {
+                    classes.push('no-data');
+                } else {
+                    classes.push('no-data');
+
+                    // Generate time key based on station timezone
+                    let timeKey, checkTimeKey;
+                    if (timezone === 'UTC') {
+                        timeKey = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}${String(hour).padStart(2, '0')}${String(minute).padStart(2, '0')}`;
+                        const checkMinute = Math.floor(minute / interval) * interval;
+                        checkTimeKey = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}${String(hour).padStart(2, '0')}${String(checkMinute).padStart(2, '0')}`;
+                    } else {
+                        timeKey = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}${String(hour).padStart(2, '0')}${String(minute).padStart(2, '0')}`;
+                        const checkMinute = Math.floor(minute / interval) * interval;
+                        checkTimeKey = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}${String(hour).padStart(2, '0')}${String(checkMinute).padStart(2, '0')}`;
+                    }
+
+                    const hasNormalScan = normalScanData && normalScanData[checkTimeKey];
+                    const hasRapidScan = rapidScanData && rapidScanData[timeKey];
+
+                    if (station.type === 'dual' && hasNormalScan && hasRapidScan) {
+                        classes[classes.indexOf('no-data')] = 'both-scan';
+                        square.textContent = '?';
+                    } else if (hasNormalScan) {
+                        classes[classes.indexOf('no-data')] = 'normal-scan';
+                    } else if (hasRapidScan) {
+                        classes[classes.indexOf('no-data')] = 'rapid-scan';
+                    }
+                }
+
+                square.className = classes.join(' ');
+                row.appendChild(square);
+            }
+
+            gridContainer.appendChild(row);
+        }
+
+        // Grid overlay with lines
+        const gridOverlay = document.createElement('div');
+        gridOverlay.className = 'grid-overlay';
+
+        // Vertical lines - every 6 hours as before
+        for (let hour = 0; hour <= 18; hour += 6) {
+            const verticalLine = document.createElement('div');
+            verticalLine.className = 'grid-line-vertical';
+            verticalLine.style.left = `${12 + (hour * 9)}px`;
+            gridOverlay.appendChild(verticalLine);
+        }
+
+        // Horizontal lines - using the interval
+        for (let minute = 0; minute <= (60 - interval); minute += interval) {
+            const horizontalLine = document.createElement('div');
+            horizontalLine.className = 'grid-line-horizontal';
+            horizontalLine.style.top = `${12 + (minute * 10)}px`;
+            gridOverlay.appendChild(horizontalLine);
+        }
+
+        gridContainer.appendChild(gridOverlay);
+        dayContainer.appendChild(gridContainer);
+        container.appendChild(dayContainer);
+    }
+
+    // Create combined day display (for AND/OR stations)
+    function createCombinedDayDisplay(date, station1Data, station2Data, container, isFutureDay, now, maintenancePeriods) {
+        const dayContainer = document.createElement('div');
+        dayContainer.className = 'day-container';
+
+        const dayStr = String(date.getDate()).padStart(2, '0');
+        const monthStr = String(date.getMonth() + 1).padStart(2, '0');
+        const weekdayStr = date.toLocaleDateString('en-US', { weekday: 'short' }).substring(0, 3);
+        const dateStr = `${dayStr}/${monthStr} ${weekdayStr}`;
+
+        const dayHeader = document.createElement('div');
+        dayHeader.className = 'day-header';
+
+        const dateText = document.createElement('div');
+        dateText.className = 'day-header-date';
+        dateText.textContent = dateStr;
+        dayHeader.appendChild(dateText);
+
+        dayContainer.appendChild(dayHeader);
+
+        const gridContainer = document.createElement('div');
+        gridContainer.className = 'grid-container';
+
+        const hourLabels = document.createElement('div');
+        hourLabels.className = 'hour-labels';
+        hourLabels.appendChild(document.createElement('div'));
+
+        // Hour labels
+        for (let hour = 0; hour < 24; hour++) {
+            const label = document.createElement('div');
+            label.className = 'hour-label';
+            label.textContent = String(hour).padStart(2, '0');
+            hourLabels.appendChild(label);
+        }
+
+        gridContainer.appendChild(hourLabels);
+
+        const noDataForDay = (station1Data.normalScanData === null && station1Data.rapidScanData === null &&
+                             station2Data.normalScanData === null && station2Data.rapidScanData === null) && !isFutureDay;
+
+        // Get current time and today's date for comparison
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+        const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+        const isToday = dateStart.getTime() === todayStart.getTime();
+
+        // Get station configuration for timezone
+        const station = stationsConfig[currentStation];
+        const timezone = station?.timezone || 'HKT'; // Default to HKT if not specified
+        const hasMaintenance = station?.has_maintenance || false;
+
+        function formatTimeForDisplay(date) {
+            if (timezone === 'UTC') {
+                return `${String(date.getUTCHours()).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')} UTC`;
+            } else {
+                // HKT is UTC+8
+                const hktDate = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+                return `${String(hktDate.getUTCHours()).padStart(2, '0')}:${String(hktDate.getUTCMinutes()).padStart(2, '0')} HKT`;
+            }
+        }
+
+        for (let minute = 0; minute < 60; minute++) {
+            const row = document.createElement('div');
+            row.className = 'grid-row';
+
+            const minuteLabel = document.createElement('div');
+            minuteLabel.className = 'minute-label';
+            minuteLabel.textContent = String(minute).padStart(2, '0');
+            row.appendChild(minuteLabel);
+
+            for (let hour = 0; hour < 24; hour++) {
+                const square = document.createElement('div');
+
+                // Create time slot based on station timezone
+                let currentTimeSlot;
+                if (timezone === 'UTC') {
+                    // For UTC stations, create time slot using local date values but in UTC
+                    currentTimeSlot = new Date(Date.UTC(
+                        date.getFullYear(),
+                        date.getMonth(),
+                        date.getDate(),
+                        hour,
+                        minute,
+                        0,
+                        0
+                    ));
+                } else {
+                    // For HKT stations, use local time
+                    currentTimeSlot = new Date(date);
+                    currentTimeSlot.setHours(hour, minute, 0, 0);
+                }
+
+                square.setAttribute('data-time', currentTimeSlot.toISOString());
+                square.style.position = 'relative';
+
+                let classes = ['square'];
+
+                // Time display on hover
+                square.addEventListener('mouseenter', function() {
+                    if (!this.timeDisplay) {
+                        this.timeDisplay = document.createElement('div');
+                        this.timeDisplay.className = 'square-time';
+                        this.timeDisplay.textContent = formatTimeForDisplay(currentTimeSlot);
+                        this.appendChild(this.timeDisplay);
+                    }
+                });
+
+                square.addEventListener('mouseleave', function() {
+                    if (this.timeDisplay) {
+                        this.removeChild(this.timeDisplay);
+                        this.timeDisplay = null;
+                    }
+                });
+
+                // Check maintenance periods only if station supports maintenance
+                if (hasMaintenance) {
+                    const maintenance = getEffectiveMaintenance(currentTimeSlot, maintenancePeriods);
+
+                    if (maintenance) {
+                        classes.push(getMaintenanceClass(maintenance));
+
+                        square.className = classes.join(' ');
+
+                        square.addEventListener('click', () => {
+                            showEventDetails(
+                                maintenance.type,
+                                maintenance.remarks,
+                                maintenance.user,
+                                maintenance.startHKT,
+                                maintenance.endHKT
+                            );
+                        });
+
+                        square.addEventListener('mouseenter', () => {
+                            showTooltip(square, maintenance.type, `${maintenance.remarks} (by ${maintenance.user})`);
+                        });
+                        row.appendChild(square);
+                        continue;
+                    }
+                }
+
+                // Check if future time - account for timezone
+                let isFutureTime = false;
+                if (isFutureDay) {
+                    isFutureTime = true;
+                } else if (isToday) {
+                    if (timezone === 'UTC') {
+                        // For UTC stations, compare UTC times directly
+                        const nowUTC = new Date();
+                        isFutureTime = currentTimeSlot > nowUTC;
+                    } else {
+                        // For HKT stations, compare local times
+                        isFutureTime = currentTimeSlot > now;
+                    }
+                }
+
+                if (isFutureTime) {
+                    classes.push('future');
+                    square.className = classes.join(' ');
+                    row.appendChild(square);
+                    continue;
+                } else if (noDataForDay) {
+                    classes.push('combined-no-data');
+                    square.className = classes.join(' ');
+                    row.appendChild(square);
+                    continue;
+                }
+
+                // Generate time keys based on station timezone
+                let timeKey, normalScanTimeKey;
+                if (timezone === 'UTC') {
+                    timeKey = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}${String(hour).padStart(2, '0')}${String(minute).padStart(2, '0')}`;
+                    const normalScanMinute = Math.floor(minute / 6) * 6;
+                    normalScanTimeKey = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}${String(hour).padStart(2, '0')}${String(normalScanMinute).padStart(2, '0')}`;
+                } else {
+                    timeKey = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}${String(hour).padStart(2, '0')}${String(minute).padStart(2, '0')}`;
+                    const normalScanMinute = Math.floor(minute / 6) * 6;
+                    normalScanTimeKey = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}${String(hour).padStart(2, '0')}${String(normalScanMinute).padStart(2, '0')}`;
+                }
+
+                // Check station 1 availability
+                const station1HasNormal = station1Data.normalScanData && station1Data.normalScanData[normalScanTimeKey];
+                const station1HasRapid = station1Data.rapidScanData && station1Data.rapidScanData[timeKey];
+                const station1Available = station1HasNormal || station1HasRapid;
+
+                // Check station 2 availability
+                const station2HasNormal = station2Data.normalScanData && station2Data.normalScanData[normalScanTimeKey];
+                const station2HasRapid = station2Data.rapidScanData && station2Data.rapidScanData[timeKey];
+                const station2Available = station2HasNormal || station2HasRapid;
+
+                // Apply logic based on station type
+                if (currentStation === 'TMS_AND_TCR') {
+                    if (station1Available && station2Available) {
+                        classes.push('combined-and');
+                    } else {
+                        classes.push('combined-no-data');
+                    }
+                } else if (currentStation === 'TMS_OR_TCR') {
+                    if (station1Available || station2Available) {
+                        classes.push('combined-or');
+                    } else {
+                        classes.push('combined-no-data');
+                    }
+                }
+
+                square.className = classes.join(' ');
+                row.appendChild(square);
+            }
+
+            gridContainer.appendChild(row);
+        }
+
+        // Grid overlay with lines
+        const gridOverlay = document.createElement('div');
+        gridOverlay.className = 'grid-overlay';
+
+        // Vertical lines
+        for (let hour = 0; hour <= 18; hour += 6) {
+            const verticalLine = document.createElement('div');
+            verticalLine.className = 'grid-line-vertical';
+            verticalLine.style.left = `${12 + (hour * 9)}px`;
+            gridOverlay.appendChild(verticalLine);
+        }
+
+        // Horizontal lines - using 6 minute interval for combined view
+        for (let minute = 0; minute <= 54; minute += 6) {
+            const horizontalLine = document.createElement('div');
+            horizontalLine.className = 'grid-line-horizontal';
+            horizontalLine.style.top = `${12 + (minute * 10)}px`;
+            gridOverlay.appendChild(horizontalLine);
+        }
+
+        gridContainer.appendChild(gridOverlay);
+        dayContainer.appendChild(gridContainer);
+        container.appendChild(dayContainer);
+    }
+
+    // Fetch maintenance data for a date range (more efficient for week views)
+    async function fetchMaintenanceDataRange(stationKey, startDate, endDate) {
+        const station = stationsConfig[stationKey];
+        if (!station || !station.has_maintenance) return [];
+
+        // For UTC stations, extend the date range to account for timezone conversion
+        // HKT maintenance periods might fall into our UTC display window after conversion
+        let requestStartDate = new Date(startDate);
+        let requestEndDate = new Date(endDate);
+
+        if (station.timezone === 'UTC') {
+            // Extend range by 1 day in both directions to catch timezone edge cases
+            requestStartDate.setDate(requestStartDate.getDate() - 1);
+            requestEndDate.setDate(requestEndDate.getDate() + 1);
+        }
+
+        // Format dates using local date components to avoid timezone conversion issues
+        const startDateStr = `${requestStartDate.getFullYear()}-${String(requestStartDate.getMonth() + 1).padStart(2, '0')}-${String(requestStartDate.getDate()).padStart(2, '0')}`;
+        const endDateStr = `${requestEndDate.getFullYear()}-${String(requestEndDate.getMonth() + 1).padStart(2, '0')}-${String(requestEndDate.getDate()).padStart(2, '0')}`;
+        const cacheKey = `${stationKey}-${startDateStr}-${endDateStr}`;
+
+        // Check cache first
+        const now = Date.now();
+        if (now < cacheExpiry && maintenanceCache.has(cacheKey)) {
+            return maintenanceCache.get(cacheKey);
+        }
+
+        try {
+            const response = await fetch(
+                `http://radsats36:9000/api/maintenance?station=${stationKey}&startDate=${startDateStr}&endDate=${endDateStr}`
+            );
+            if (!response.ok) return [];
+
+            const maintenanceData = await response.json();
+
+            const processedData = maintenanceData.map(period => {
+                // Parse timestamps according to timezone
+                const startHKT = parseTimestampWithTimezone(period.startDate, period.timezone || 'HKT');
+                const endHKT = parseTimestampWithTimezone(period.endDate, period.timezone || 'HKT');
+
+                return {
+                    ...period,
+                    startHKT,
+                    endHKT
+                };
+            }).filter(period => {
+                // Filter to only include periods that actually overlap with our display window
+                // after timezone conversion
+                let displayStart, displayEnd;
+
+                if (station.timezone === 'UTC') {
+                    // For UTC stations, create display boundaries in UTC
+                    displayStart = new Date(Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 0, 0, 0, 0));
+                    displayEnd = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59, 999));
+                } else {
+                    // For HKT stations, create display boundaries in local time
+                    displayStart = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), 0, 0, 0, 0);
+                    displayEnd = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59, 999);
+                }
+
+                return period.endHKT >= displayStart && period.startHKT <= displayEnd;
+            });
+
+            // Cache the result
+            maintenanceCache.set(cacheKey, processedData);
+            if (now >= cacheExpiry) {
+                cacheExpiry = now + CACHE_DURATION;
+            }
+
+            return processedData;
+        } catch (error) {
+            console.error('Error fetching maintenance data:', error);
+            return [];
+        }
+    }
+
+    // Updated fetchMaintenanceData for single days (now uses range function)
+    async function fetchMaintenanceData(stationKey, date) {
+        return await fetchMaintenanceDataRange(stationKey, date, date);
+    }
+
+    // Helper functions
+    function showTooltip(element, type, remarks) {
+        const existingTooltip = document.querySelector('.tooltip');
+        if (existingTooltip) existingTooltip.remove();
+
+        const tooltip = document.createElement('div');
+        tooltip.className = 'tooltip';
+        tooltip.innerHTML = `
+            <strong>${type}</strong><br>
+            ${remarks}<br>
+            <em style="color: #888; font-size: 0.9em;">Click it to see more details</em>
+        `;
+        document.body.appendChild(tooltip);
+
+        const rect = element.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const spaceBelow = viewportHeight - rect.bottom;
+        const spaceAbove = rect.top;
+
+        if (spaceBelow < 150 && spaceAbove > 150) {
+            tooltip.style.top = `${rect.top - 150}px`;
+            tooltip.style.left = `${rect.left}px`;
+        } else {
+            tooltip.style.top = `${rect.bottom + 5}px`;
+            tooltip.style.left = `${rect.left}px`;
+        }
+
+        element.addEventListener('mouseleave', () => {
+            tooltip.remove();
+        });
+    }
+
+    // Show Scheduled Event Details with new date format dd/mm/yyyy HH:MM TZ
+    function showEventDetails(type, remarks, user, startTime, endTime) {
+        const eventDetails = document.getElementById('eventDetails');
+        const eventDetailsContent = document.getElementById('eventDetailsContent');
+
+        eventDetailsContent.innerHTML = `
+            <p><strong>Type:</strong> ${type}</p>
+            <p><strong>Time:</strong> ${formatTime(startTime)} - ${formatTime(endTime)}</p>
+            <p><strong>Details:</strong> ${remarks}</p>
+            <p><strong>Scheduled by:</strong> ${user}</p>
+        `;
+
+        eventDetails.style.display = 'block';
+    }
+
+    // New formatting: dd/mm/yyyy HH:MM <TZ>
+    function formatTime(date) {
+        const station = stationsConfig[currentStation];
+        const timezone = station?.timezone || 'HKT';
+
+        let day, month, year, hours, minutes, tzLabel;
+        if (timezone === 'UTC') {
+            day = String(date.getUTCDate()).padStart(2, '0');
+            month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            year = date.getUTCFullYear();
+            hours = String(date.getUTCHours()).padStart(2, '0');
+            minutes = String(date.getUTCMinutes()).padStart(2, '0');
+            tzLabel = 'UTC';
+        } else {
+            // HKT is UTC+8: convert the underlying Date (which is UTC-based) to HKT representation
+            const hktDate = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+            day = String(hktDate.getUTCDate()).padStart(2, '0');
+            month = String(hktDate.getUTCMonth() + 1).padStart(2, '0');
+            year = hktDate.getUTCFullYear();
+            hours = String(hktDate.getUTCHours()).padStart(2, '0');
+            minutes = String(hktDate.getUTCMinutes()).padStart(2, '0');
+            tzLabel = 'HKT';
+        }
+        return `${day}/${month}/${year} ${hours}:${minutes} ${tzLabel}`;
+    }
+
+    function formatSimpleTime(date) {
+        const station = stationsConfig[currentStation];
+        const timezone = station?.timezone || 'HKT';
+
+        if (timezone === 'UTC') {
+            return `${String(date.getUTCHours()).padStart(2, '0')}:${String(date.getUTCMinutes()).padStart(2, '0')} UTC`;
+        } else {
+            const hktDate = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+            return `${String(hktDate.getUTCHours()).padStart(2, '0')}:${String(hktDate.getUTCMinutes()).padStart(2, '0')} HKT`;
+        }
+    }
+
+    // Calendar functions with year and month picker
+    function renderCalendar() {
+        const calendarEl = document.getElementById('calendar');
+        const year = currentCalendarDate.getFullYear();
+        const month = currentCalendarDate.getMonth();
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const prevMonthDays = new Date(year, month, 0).getDate();
+        const nextMonthDays = new Date(year, month + 2, 0).getDate();
+
+        // Get today's date
+        const today = new Date();
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+        // Get all dates in current week
+        const weekDates = [];
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(currentStartDate);
+            date.setDate(currentStartDate.getDate() + i);
+            weekDates.push(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`);
+        }
+
+        let calendarHTML = `
+            <div class="calendar-nav">
+                <button class="calendar-nav-button" id="prevMonth">◀</button>
+                <div class="calendar-year-month" id="yearMonthDisplay">${currentCalendarDate.toLocaleString('en-US', { month: 'short', year: 'numeric' })}</div>
+                <button class="calendar-nav-button" id="nextMonth">▶</button>
+            </div>
+            <table class="calendar">
+                <tr>
+                    <th>S</th><th>M</th><th>T</th><th>W</th><th>T</th><th>F</th><th>S</th>
+                </tr>
+                <tr>
+        `;
+
+        // Previous month days
+        for (let i = 0; i < firstDay; i++) {
+            const prevMonthDay = prevMonthDays - firstDay + i + 1;
+            const prevMonth = month === 0 ? 11 : month - 1;
+            const prevYear = month === 0 ? year - 1 : year;
+            const dateStr = `${prevYear}-${String(prevMonth + 1).padStart(2, '0')}-${String(prevMonthDay).padStart(2, '0')}`;
+
+            let classes = ['other-month'];
+            if (weekDates.includes(dateStr)) classes.push('selected');
+
+            calendarHTML += `<td class="${classes.join(' ')}">${prevMonthDay}</td>`;
+        }
+
+        let dayCounter = 1;
+        for (let i = firstDay; i < 42; i++) {
+            if (i > 0 && i % 7 === 0) calendarHTML += `</tr><tr>`;
+
+            if (dayCounter <= daysInMonth) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayCounter).padStart(2, '0')}`;
+                let classes = [];
+                if (dateStr === todayStr) classes.push('today');
+                if (weekDates.includes(dateStr)) classes.push('selected');
+
+                calendarHTML += `<td data-date="${dateStr}"${classes.length ? ` class="${classes.join(' ')}"` : ''}>${dayCounter}</td>`;
+                dayCounter++;
+            } else {
+                const nextMonthDay = dayCounter - daysInMonth;
+                const nextMonth = month === 11 ? 0 : month + 1;
+                const nextYear = month === 11 ? year + 1 : year;
+                const dateStr = `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}-${String(nextMonthDay).padStart(2, '0')}`;
+
+                let classes = ['other-month'];
+                if (weekDates.includes(dateStr)) classes.push('selected');
+
+                calendarHTML += `<td class="${classes.join(' ')}">${nextMonthDay}</td>`;
+                dayCounter++;
+            }
+        }
+
+        calendarHTML += `</tr></table>`;
+        calendarEl.innerHTML = calendarHTML;
+
+        // Add event listeners
+        document.querySelectorAll('.calendar td[data-date]').forEach(td => {
+            td.addEventListener('click', function() {
+                const selectedDate = new Date(this.dataset.date);
+                currentStartDate = new Date(selectedDate);
+                currentStartDate.setHours(0, 0, 0, 0);
+                currentCalendarDate = new Date(currentStartDate);
+                closeEventDetails();
+                clearURLParameters(); // Clear URL parameters when selecting calendar date
+                renderCalendar();
+                checkAndSetAutoRefresh();
+                loadData();
+            });
+        });
+
+        document.getElementById('prevMonth').addEventListener('click', function() {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+            renderCalendar();
+        });
+
+        document.getElementById('nextMonth').addEventListener('click', function() {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+            renderCalendar();
+        });
+
+        // Year and month picker functionality
+        document.getElementById('yearMonthDisplay').addEventListener('click', function(e) {
+            e.stopPropagation();
+            showYearMonthPicker(this);
+        });
+    }
+
+    function showYearMonthPicker(element) {
+        // Remove existing picker
+        const existingPicker = document.querySelector('.year-month-picker');
+        if (existingPicker) {
+            existingPicker.remove();
+            return;
+        }
+
+        const picker = document.createElement('div');
+        picker.className = 'year-month-picker';
+
+        const currentYear = currentCalendarDate.getFullYear();
+        const currentMonth = currentCalendarDate.getMonth();
+
+        // Year section
+        const yearSection = document.createElement('div');
+        yearSection.className = 'picker-section';
+        yearSection.innerHTML = '<div class="picker-title">Year</div>';
+
+        const yearGrid = document.createElement('div');
+        yearGrid.className = 'picker-grid';
+
+        const startYear = currentYear - 11;
+        const endYear = currentYear + 0;
+
+        for (let year = startYear; year <= endYear; year++) {
+            const yearOption = document.createElement('div');
+            yearOption.className = 'picker-option';
+            yearOption.textContent = year;
+            if (year === currentYear) {
+                yearOption.classList.add('selected');
+            }
+
+            yearOption.addEventListener('click', function() {
+                currentCalendarDate.setFullYear(year);
+                renderCalendar();
+                picker.remove();
+            });
+
+            yearGrid.appendChild(yearOption);
+        }
+
+        yearSection.appendChild(yearGrid);
+        picker.appendChild(yearSection);
+
+        // Month section
+        const monthSection = document.createElement('div');
+        monthSection.className = 'picker-section';
+        monthSection.innerHTML = '<div class="picker-title">Month</div>';
+
+        const monthGrid = document.createElement('div');
+        monthGrid.className = 'picker-grid';
+
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                           'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+        monthNames.forEach((monthName, index) => {
+            const monthOption = document.createElement('div');
+            monthOption.className = 'picker-option';
+            monthOption.textContent = monthName;
+            if (index === currentMonth) {
+                monthOption.classList.add('selected');
+            }
+
+            monthOption.addEventListener('click', function() {
+                currentCalendarDate.setMonth(index);
+                renderCalendar();
+                picker.remove();
+            });
+
+            monthGrid.appendChild(monthOption);
+        });
+
+        monthSection.appendChild(monthGrid);
+        picker.appendChild(monthSection);
+
+        const rect = element.getBoundingClientRect();
+        picker.style.position = 'absolute';
+        picker.style.top = `${rect.bottom + 5}px`;
+        picker.style.left = `${rect.left}px`;
+
+        document.body.appendChild(picker);
+
+        // Close picker when clicking outside
+        document.addEventListener('click', function closePicker(e) {
+            if (!picker.contains(e.target) && e.target !== element) {
+                picker.remove();
+                document.removeEventListener('click', closePicker);
+            }
+        });
+    }
+
+    // Auto-refresh functions - FIXED for UTC stations
+    function checkAndSetAutoRefresh() {
+        const now = new Date();
+        const endDate = new Date(currentStartDate);
+        endDate.setDate(currentStartDate.getDate() + 6);
+
+        // Get station timezone
+        const station = stationsConfig[currentStation];
+        const timezone = station?.timezone || 'HKT';
+
+        let nowDate, startDateNoTime, endDateNoTime;
+
+        if (timezone === 'UTC') {
+            // For UTC stations, use UTC dates for comparison
+            nowDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
+            startDateNoTime = new Date(Date.UTC(currentStartDate.getFullYear(), currentStartDate.getMonth(), currentStartDate.getDate(), 0, 0, 0, 0));
+            endDateNoTime = new Date(Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 0, 0, 0, 0));
+        } else {
+            // For HKT stations, use local dates
+            nowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+            startDateNoTime = new Date(currentStartDate.getFullYear(), currentStartDate.getMonth(), currentStartDate.getDate(), 0, 0, 0, 0);
+            endDateNoTime = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 0, 0, 0, 0);
+        }
+
+        const containsCurrentDate = nowDate >= startDateNoTime && nowDate <= endDateNoTime;
+
+        if (containsCurrentDate && !isAutoRefreshing) {
+            isAutoRefreshing = true;
+            startAutoRefresh();
+            document.getElementById('refreshInfo').textContent = 'Auto-refresh enabled (updates every minute)';
+        } else if (!containsCurrentDate && isAutoRefreshing) {
+            isAutoRefreshing = false;
+            stopAutoRefresh();
+            document.getElementById('refreshInfo').textContent = '';
+        }
+    }
+
+    function startAutoRefresh() {
+        loadData();
+        refreshInterval = setInterval(loadData, 60000);
+    }
+
+    function stopAutoRefresh() {
+        if (refreshInterval) {
+            clearInterval(refreshInterval);
+            refreshInterval = null;
+        }
+    }
+
+    function closeEventDetails() {
+        document.getElementById('eventDetails').style.display = 'none';
+    }
+
+    // Main data loading function
+    async function loadData() {
+        checkAndSetAutoRefresh();
+
+        const resultsContainer = document.getElementById('resultsContainer');
+        resultsContainer.innerHTML = '<div>Loading data... Please wait.</div>';
+
+        try {
+            const days = [];
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(currentStartDate);
+                date.setDate(currentStartDate.getDate() + i);
+                days.push(date);
+            }
+
+            const now = new Date();
+            const station = stationsConfig[currentStation];
+
+            // Fetch maintenance data only if station supports it
+            let maintenancePeriods = [];
+            if (station && station.has_maintenance) {
+                const startRange = days[0];
+                const endRange = days[days.length - 1];
+                maintenancePeriods = await fetchMaintenanceDataRange(currentStation, startRange, endRange);
+            }
+
+            if (station && (station.type === 'and' || station.type === 'or')) {
+                // For combined stations
+                const station1 = station.data_source[0];
+                const station2 = station.data_source[1];
+
+                const station1Promises = days.map(date => fetchDayData(station1, date));
+                const station2Promises = days.map(date => fetchDayData(station2, date));
+
+                const allStation1Data = await Promise.all(station1Promises);
+                const allStation2Data = await Promise.all(station2Promises);
+
+                resultsContainer.innerHTML = '';
+                const weekContainer = document.createElement('div');
+                weekContainer.className = 'week-container';
+
+                for (let i = 0; i < days.length; i++) {
+                    const date = days[i];
+                    const isFutureDay = date > now;
+
+                    createCombinedDayDisplay(
+                        date,
+                        allStation1Data[i],
+                        allStation2Data[i],
+                        weekContainer,
+                        isFutureDay,
+                        now,
+                        maintenancePeriods
+                    );
+                }
+
+                resultsContainer.appendChild(weekContainer);
+            } else {
+                // For single stations
+                Promise.all(days.map(date => fetchDayData(currentStation, date)))
+                    .then(allDaysData => {
+                        resultsContainer.innerHTML = '';
+                        const weekContainer = document.createElement('div');
+                        weekContainer.className = 'week-container';
+
+                        allDaysData.forEach(({date, normalScanData, rapidScanData}) => {
+                            const isFutureDay = date > now;
+                            createDayDisplay(date, normalScanData, rapidScanData, weekContainer, isFutureDay, now, maintenancePeriods);
+                        });
+
+                        resultsContainer.appendChild(weekContainer);
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        resultsContainer.innerHTML = '<div>Error loading data. Please try again.</div>';
+                    });
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            resultsContainer.innerHTML = '<div>Please select a valid date.</div>';
+        }
+    }
+
+    // Initialize the application
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Parse URL parameters first
+        const urlParams = parseURLParameters();
+        
+        // Populate config selector and get selected config
+        const configFile = await populateConfigSelector(urlParams.config);
+        
+        // Load station configuration
+        stationsConfig = await loadStationsConfig(`radsat_availability_json/${configFile}`);
+        if (!stationsConfig) {
+            stationsConfig = defaultStationsConfig;
+        }
+
+        // Set initial date to nearest Sunday (default) or from URL parameter
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (urlParams.date) {
+            // If date provided in URL, use nearest Sunday to that date
+            currentStartDate = getNearestSunday(urlParams.date);
+        } else {
+            // Default to nearest Sunday to today
+            currentStartDate = getNearestSunday(today);
+        }
+        currentCalendarDate = new Date(currentStartDate);
+
+        // Set station from URL parameter or default to first station
+        if (urlParams.station && stationsConfig[urlParams.station]) {
+            currentStation = urlParams.station;
+        } else {
+            currentStation = Object.keys(stationsConfig)[0];
+            if (urlParams.station) {
+                console.warn('Invalid station parameter:', urlParams.station);
+            }
+        }
+
+        // Show timezone
+        document.getElementById('timezoneDisplay').textContent = `All times in ${stationsConfig[currentStation].timezone || 'HKT'}`;
+
+        // Initialize UI
+        createStationButtons();
+        updateDataSourceInfo();
+        updateLegendVisibility();
+        updateStationDisplay();
+        renderCalendar();
+        loadData();
+
+        // Event listeners
+        document.getElementById('prevWeek').addEventListener('click', function() {
+            currentStartDate.setDate(currentStartDate.getDate() - 7);
+            currentCalendarDate = new Date(currentStartDate);
+            closeEventDetails();
+            clearURLParameters(); // Clear URL parameters when navigating weeks
+            renderCalendar();
+            checkAndSetAutoRefresh();
+            loadData();
+        });
+
+        document.getElementById('nextWeek').addEventListener('click', function() {
+            currentStartDate.setDate(currentStartDate.getDate() + 7);
+            currentCalendarDate = new Date(currentStartDate.getDate() + 7);
+            currentCalendarDate = new Date(currentStartDate);
+            closeEventDetails();
+            clearURLParameters(); // Clear URL parameters when navigating weeks
+            renderCalendar();
+            checkAndSetAutoRefresh();
+            loadData();
+        });
+
+        document.getElementById('refreshButton').addEventListener('click', function() {
+            // Clear maintenance cache to ensure fresh data
+            maintenanceCache.clear();
+            cacheExpiry = 0;
+            closeEventDetails();
+            loadData();
+        });
+
+        document.getElementById('todayButton').addEventListener('click', function() {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            currentStartDate = getNearestSunday(today);
+            currentCalendarDate = new Date(currentStartDate);
+            closeEventDetails();
+            clearURLParameters(); // Clear URL parameters when going to today
+            renderCalendar();
+            checkAndSetAutoRefresh();
+            loadData();
+        });
+
+        document.getElementById('closeEventDetails').addEventListener('click', closeEventDetails);
+
+        document.getElementById('configSelector').addEventListener('change', function() {
+            changeConfigFile(this.value);
+        });
+    });
+</script>
+</body>
+</html>

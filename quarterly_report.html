@@ -1,0 +1,2848 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" >
+<meta name="viewport" content="width=device-width,initial-scale=1" >
+<title>Quarterly Report</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 120 120%22><text x=%2260%22 y=%2290%22 font-size=%2290%22 text-anchor=%22middle%22>📊</text></svg>">
+<style>
+  :root{
+    --bg:#f6f8fb; --card:#fff; --accent:#0b63c6; --muted:#6b7280;
+    --primary:#0b63c6; --good:#f97316; --warn:#d97706; --bad:#dc2626;
+  }
+  body{font-family:Arial, sans-serif;margin:0;background:var(--bg);color:#102}
+  .header { text-align: left; margin-bottom: 15px; font-size: 1.5em; }
+  header{background:linear-gradient(90deg,var(--primary),#4aa3ff);color:#fff;padding:12px 16px}
+  .container{max-width:1800px;margin:16px auto;padding:0 12px} /* wider container */
+  .card{background:var(--card);border-radius:8px;padding:12px;margin-bottom:12px;box-shadow:0 1px 6px rgba(10,20,40,.06)}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  select,button{padding:8px;border-radius:6px;border:1px solid #d6e3fb;background:#fff}
+  button.primary{background:linear-gradient(180deg,var(--primary),#075bb0);color:#fff;border:none}
+  button.secondary{background:linear-gradient(180deg,#e0f2fe,#bae6fd);color:#0369a1;border:1px solid #7dd3fc;font-weight:500}
+  button.secondary:hover{background:linear-gradient(180deg,#bae6fd,#7dd3fc)}
+  .small{font-size:0.9rem;color:#4b5563}
+  .muted{color:var(--muted)}
+  .nav-button { padding:6px 12px; background:#2979ff; color:#fff; border-radius:4px; text-decoration:none; display:inline-block; font-size:0.9em; }
+
+  /* Tab styles */
+  .tab-container {
+    margin-bottom: 20px;
+  }
+  
+  .tab-buttons {
+    display: flex;
+    border-bottom: 2px solid #e5e7eb;
+    margin-bottom: 0;
+  }
+  
+  .tab-button {
+    padding: 12px 24px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #6b7280;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+  }
+  
+  .tab-button:hover {
+    color: #2979ff;
+    background-color: #f8fafc;
+  }
+  
+  .tab-button.active {
+    color: #2979ff;
+    border-bottom-color: #2979ff;
+    background-color: #f0f9ff;
+  }
+  
+  .tab-content {
+    display: none;
+  }
+  
+  .tab-content.active {
+    display: block;
+  }
+
+  /* Fixed-width boxes and wider grid */
+  .grid4{
+    display:grid;
+    grid-template-columns:repeat(4, minmax(380px, 1fr)); /* wider min width */
+    gap:16px;
+  }
+  .block{
+    background:#fff;border-radius:8px;padding:12px;border:1px solid #eef4ff;min-height:120px;
+    width:100%;
+    max-width: 400px;            /* larger fixed box width cap */
+    overflow:hidden;             /* prevent expansion */
+  }
+  .primary-line{font-weight:700;font-size:1.05rem;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .muted-sm{color:var(--muted);font-size:0.92rem}
+  .adj-muted{
+    background:#fbfdff;border-left:4px solid var(--primary);padding:8px;border-radius:4px;margin-top:6px;
+    font-size:0.88rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+  }
+
+  /* Details: fixed internal area so opening doesn't change outer width */
+  details.collapsible{
+    background:#fbfdff;border-radius:6px;border:1px solid #eef4ff;margin-top:8px;
+    /* keep header compact */
+  }
+  details.collapsible > summary{cursor:pointer;font-weight:600;padding:8px;color:#666}
+  .details-inner{
+    margin:0; padding:8px; border-top:1px solid #eef4ff;
+    font-size:0.88rem; line-height:1.35;
+    max-height:520px; overflow:auto; /* scroll inside; box width stays fixed */
+  }
+  .periods-title{font-weight:600; color:#374151; border-bottom:1px solid #e5e7eb; padding-bottom:4px;}
+  .section-header{display:flex; justify-content:space-between; align-items:center; margin-top:6px; margin-bottom:2px;}
+  .section-title{font-weight:600; font-size:0.85rem; color:#374151;}
+  pre.mono{
+    font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace;
+    font-size:0.86rem; white-space:pre-wrap; word-wrap:break-word; overflow-wrap:break-word;
+    margin:6px 0 0 0; color:#374151;
+  }
+
+  /* Loading overlay */
+  .loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    font-size: 1.1rem;
+    color: #333;
+  }
+  
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #2979ff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .date-link {
+    color: #2979ff;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .date-link:hover {
+    color: #1a68e6;
+  }
+
+  .copy-btn {
+    background: linear-gradient(135deg, #2979ff 0%, #1a68e6 100%);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+  }
+  
+  .copy-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(41, 121, 255, 0.3);
+  }
+  
+  .copy-btn:active {
+    transform: translateY(0);
+  }
+  
+  .copy-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Satellite maintenance remarks styling */
+  .satellite-maintenance-remarks {
+    background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
+    border: 1px solid #fb923c;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+  }
+  .satellite-maintenance-remarks h4 {
+    margin: 0 0 12px 0;
+    color: #c2410c;
+    font-weight: 600;
+  }
+  .remarks-list {
+    font-size: 0.85rem;
+    line-height: 1.4;
+    color: #7c2d12;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  .remarks-list ol {
+    padding-left: 16px;
+    margin: 0;
+  }
+  .remarks-list li {
+    margin-bottom: 6px;
+  }
+
+  @media (max-width:1200px){
+    .grid4{grid-template-columns:repeat(3, minmax(380px, 1fr))}
+  }
+  @media (max-width:1140px){
+    .grid4{grid-template-columns:repeat(2, minmax(380px, 1fr))}
+  }
+  @media (max-width:760px){
+    .grid4{grid-template-columns:1fr}
+    .block{max-width:100%}
+    .primary-line{font-size:1rem}
+    .adj-muted{font-size:0.84rem}
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+    <h1 class="header">Quarterly Report</h1>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <a href="radsat_availability.html" target="_blank" rel="noopener noreferrer" class="nav-button" aria-label="Open Availability in new tab" style="transition: transform 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">📡🛰️ Availability</a>
+      <a href="maintenance.html" target="_blank" rel="noopener noreferrer" class="nav-button" aria-label="Open Maintenance in new tab" style="transition: transform 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">🔧 Maintenance</a>
+      <a href="quarterly_report.html" class="nav-button" style="background-color: #0b63c6; color: white; transition: transform 0.2s ease;" aria-label="Current page" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">📊 Quarterly Report</a>
+    </div>
+  </div>
+</div>
+
+<main class="container">
+  <section class="card">
+    <div class="controls">
+      <label class="small">Year
+        <select id="yearSel" aria-label="Year"></select>
+      </label>
+
+      <label class="small">Quarter
+        <select id="quarterSel" aria-label="Quarter">
+          <option value="1">Q1 (Jan--Mar)</option>
+          <option value="2">Q2 (Apr--Jun)</option>
+          <option value="3">Q3 (Jul--Sep)</option>
+          <option value="4">Q4 (Oct--Dec)</option>
+        </select>
+      </label>
+
+      <div style="display:flex;gap:6px;">
+        <button id="loadBtn" class="primary">Load Quarter</button>
+        <button id="prevQuarterBtn" class="secondary" title="Load previous quarter">← Prev</button>
+        <button id="nextQuarterBtn" class="secondary" title="Load next quarter">Next →</button>
+      </div>
+
+      <div id="status" class="small muted" style="margin-left:auto"></div>
+    </div>
+  </section>
+
+  <!-- Tab Container -->
+  <div class="tab-container">
+    <div class="tab-buttons">
+      <button class="tab-button active" data-tab="radar">📡 Radar</button>
+      <button class="tab-button" data-tab="satellite">🛰️ Satellite</button>
+    </div>
+  </div>
+
+  <!-- Radar Tab Content -->
+  <div id="radar-tab" class="tab-content active">
+    <section class="card" id="perMonthCard">
+      <div id="monthsContainer"></div>
+    </section>
+
+    <section class="card" id="copyButtonsCard" style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border: 1px solid #9ca3af; display: none;">
+      <h4 style="margin:0 0 12px 0; color: #374151;">Copy Data for Excel</h4>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px;">
+        <button id="copyTmsHours" class="copy-btn">
+          <div style="font-weight: 600;">Operation Hours of TMSWRS (No. of scans)</div>
+          <div style="font-size: 0.8em; opacity: 0.8; margin-top: 2px;">Operation Hours of TMS&TCWRS.xls</div>
+        </button>
+        <button id="copyTcrHours" class="copy-btn">
+          <div style="font-weight: 600;">Operation Hours of TCWRS (No. of scans)</div>
+          <div style="font-size: 0.8em; opacity: 0.8; margin-top: 2px;">Operation Hours of TMS&TCWRS.xls</div>
+        </button>
+        <button id="copyAndScans" class="copy-btn">
+          <div style="font-weight: 600;">Scans from both TMS and TC</div>
+          <div style="font-size: 0.8em; opacity: 0.8; margin-top: 2px;">Scans from both TMS and TC.xls</div>
+        </button>
+        <button id="copyOrAvailability" class="copy-btn">
+          <div style="font-weight: 600;">Data Availability of TMS and TCR (scan)</div>
+          <div style="font-size: 0.8em; opacity: 0.8; margin-top: 2px;">RadSat Data Availability.xls</div>
+        </button>
+        <button id="copyTcrAvailability" class="copy-btn">
+          <div style="font-weight: 600;">Data Availability of TCR (hour)</div>
+          <div style="font-size: 0.8em; opacity: 0.8; margin-top: 2px;">RadSat Data Availability.xls</div>
+        </button>
+      </div>
+      <div id="copyStatus" style="margin-top: 8px; font-size: 0.85rem; color: #6b7280;"></div>
+    </section>
+
+    <section class="card" style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #7dd3fc;">
+      <h4 style="margin:0 0 12px 0; color: #0c4a6e;">How Radar Availability is Calculated?</h4>
+      <div class="calculation-section" style="font-size:0.9rem; line-height:1.3; color:#0f172a;">
+        <style>
+          .calculation-section p {
+            margin: 6px 0;
+          }
+        </style>
+        <p><strong style="color: #1d4ed8; font-size: 1.05em;">What is a Found Data Slot?</strong></p>
+        <p style="color: #374151; margin-left: 16px;">A data slot represents a 6-minute time period (00, 06, 12, 18, 24, 30, 36, 42, 48, 54 minutes past each hour), creating 10 slots per hour and 240 slots per day. A slot is marked as "found" when the system detects radar data files for that specific time period from any of two sources:</p>
+        
+        <p style="color: #374151; margin-left: 32px;"><strong style="color: #6b7280; font-size: 0.95em;">• Source 1 - Raw files</strong></p>
+        <p style="color: #374151; margin-left: 48px;">Checks for files with the exact minutes 00, 06, 12, 18, 24, 30, 36, 42, 48, 54 accessed via radarop@rad19-t1. TMS and TCR raw directories are /backup_data/TMS_IrisFormatRaw_archive and /backup_data/TCR_IrisFormatRaw_archive respectively.</p>
+        
+        <p style="color: #374151; margin-left: 32px;"><strong style="color: #6b7280; font-size: 0.95em;">• Source 2 - Rapid-scan images</strong></p>
+        <p style="color: #374151; margin-left: 48px;">Checks if any rapid-scan image exists within the 6-minute interval. Images of TMS and TCR are "TMS RS > RS PPI > dBZ(H), 64km (TMS_RAPID_SCAN/TMS_RS_PPI_Z_000_064)" and "TCR RS > RS PPI > dBZ(H), 64km (Radar_TCR_rapid_scan/TCR_RS_Z_064km)" respectively.</p>
+        
+        <p style="color: #374151; margin-left: 16px;">If EITHER the raw files OR the rapid-scan images contain data for a time slot, that slot counts as "found".</p>
+        
+        <p style="color: #374151; margin-left: 16px;">For e.g., raw file of TCR is missing at exactly 16:54 on 2 Jun 2025, but rapid-scan image is found at 16:58, therefore the entire <a href="http://radsats36:9000/radsat_availability.html?config=radsat_image&station=TCR%20(raw)&date=2025-06-02" target="_blank" style="color: #2979ff; text-decoration: underline;">16:54</a> slot is marked as available.</p>
+        
+        <p><strong style="color: #1d4ed8; font-size: 1.05em;">TMS / TCR Availability:</strong></p>
+        <p style="color: #374151; margin-left: 16px;">Availability = (found data slots that are not in maintenance / expected slots) × 100%. Expected slots = 240 per day × number of days in that month.</p>
+        <p style="color: #374151; margin-left: 16px;">For e.g., TMS is under maintenance between 02:34 and 20:27 on <a href="http://radsats36:9000/radsat_availability.html?config=radsat_image&station=TMS%20(raw)&date=2025-06-13" target="_blank" style="color: #2979ff; text-decoration: underline;">13 Jun 2025</a>. Therefore, data between 02:30 and 20:29 is counted as unavailable.</p>
+        
+        <p><strong style="color: #1d4ed8; font-size: 1.05em;">Preventive Maintenance Adjustment:</strong></p>
+        <p style="color: #374151; margin-left: 16px;">When preventive maintenance occurs, those time slots are subtracted from the expected slots, providing a more accurate availability percentage that excludes planned downtime.</p>
+
+        <p><strong style="color: #1d4ed8; font-size: 1.05em;">Data Restoration:</strong></p>
+        <p style="color: #374151; margin-left: 16px;">When a "Data Restoration" record is added, it indicates that data previously thought missing for that period actually exists. The corresponding time slots are added back as found data, overriding any type of maintenance (preventive, corrective, or other). This ensures that availability calculations reflect the true data presence.</p>
+        
+        <p><strong style="color: #1d4ed8; font-size: 1.05em;">AND Logic:</strong></p>
+        <p style="color: #374151; margin-left: 16px;">Shows availability when both stations must have data simultaneously. A time slot is considered available only if both TMS and TCR have data and neither is in maintenance.</p>
+        
+        <p><strong style="color: #1d4ed8; font-size: 1.05em;">OR Logic:</strong></p>
+        <p style="color: #374151; margin-left: 16px;">Shows availability when at least one station has data. A time slot is considered available if either TMS or TCR (or both) has data and is not in maintenance. This represents overall system coverage.</p>
+
+        <p style="color: #000000; font-weight: normal; margin-top: 12px;"><strong>Note:</strong> All times are in HKT for radar data processing. Data processing runs daily at 9:30am for the previous day, so current day data may not be available until the next morning.</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- Satellite Tab Content -->
+  <div id="satellite-tab" class="tab-content">
+    <section class="card" id="satelliteMonthsCard">
+      <div id="satelliteMonthsContainer"></div>
+    </section>
+
+    <!-- Satellite Maintenance Remarks Section -->
+    <section class="card satellite-maintenance-remarks">
+      <h4 id="satelliteMaintenanceTitle"><a href="https://www.data.jma.go.jp/mscweb/en/oper/bulletin_list_H9.html" target="_blank" style="color: #c2410c; text-decoration: underline;">Himawari-9 Operational Schedule</a></h4>
+      <div id="satelliteMaintenanceRemarks" class="remarks-list">
+        Loading maintenance remarks...
+      </div>
+    </section>
+
+    <section class="card" id="satelliteCopyButtonsCard" style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border: 1px solid #9ca3af; display: none;">
+      <h4 style="margin:0 0 12px 0; color: #374151;">Copy Data for Excel</h4>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px;">
+        <button id="copyHimawariAvailability" class="copy-btn">
+          <div style="font-weight: 600;">Data Availability of Geostationary Satellite</div>
+          <div style="font-size: 0.8em; opacity: 0.8; margin-top: 2px;">RadSat Data Availability.xls</div>
+        </button>
+        <button id="copyQuarterlyRemarks" class="copy-btn">
+          <div style="font-weight: 600;">Geostationary Satellite Remarks</div>
+          <div style="font-size: 0.8em; opacity: 0.8; margin-top: 2px;">RadSat Data Availability.xls</div>
+        </button>
+      </div>
+      <div id="satelliteCopyStatus" style="margin-top: 8px; font-size: 0.85rem; color: #6b7280;"></div>
+    </section>
+
+    <section class="card" style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #7dd3fc;">
+      <h4 style="margin:0 0 12px 0; color: #0c4a6e;">How Satellite Availability is Calculated?</h4>
+      <div class="calculation-section" style="font-size:0.9rem; line-height:1.3; color:#0f172a;">
+        <p><strong style="color: #1d4ed8; font-size: 1.05em;">What is a Found Data Slot?</strong></p>
+        <p style="color: #374151; margin-left: 16px;">A data slot represents a 10-minute time period (00, 10, 20, 30, 40, 50 minutes past each hour), creating 6 slots per hour. However, 02:50 UTC and 14:50 UTC are systematically excluded every day for operational reasons, resulting in 142 available slots per day instead of the theoretical 144. A slot is marked as "found" when the system detects a satellite image file for that specific time period.</p>
+        <p style="color: #374151; margin-left: 16px;"><strong>Source:</strong> Internet > Eastern Asia > IR (Internet/H8_EasternAsia_IR)</p>
+        
+        <p><strong style="color: #1d4ed8; font-size: 1.05em;">Expected Slots Calculation:</strong></p>
+        <p style="color: #374151; margin-left: 16px;">Every day at 02:50 UTC and 14:50 UTC, there will be no data for these 2 time slots. Therefore, the expected slots per day is 142 (144 - 2).</p>
+        <p style="color: #374151; margin-left: 16px;">e.g. the expected slots of July is 142 × 31 (days) = 4402</p>
+        
+        <p><strong style="color: #1d4ed8; font-size: 1.05em;">Himawari Availability:</strong></p>
+        <p style="color: #374151; margin-left: 16px;">Availability = (found data slots that are not in maintenance / expected slots) × 100%. Expected slots = 142 per day × number of days in that month.</p>
+        
+        <p><strong style="color: #1d4ed8; font-size: 1.05em;">Preventive Maintenance Adjustment:</strong></p>
+        <p style="color: #374151; margin-left: 16px;">When preventive maintenance occurs, those time slots are subtracted from the expected slots, providing a more accurate availability percentage that excludes planned downtime. However, if preventive maintenance occurs at 02:50 UTC or 14:50 UTC, no subtraction is needed since these slots are already excluded.</p>
+
+        <p><strong style="color: #1d4ed8; font-size: 1.05em;">Data Restoration:</strong></p>
+        <p style="color: #374151; margin-left: 16px;">When a "Data Restoration" record is added, it indicates that data previously thought missing for that period actually exists. The corresponding time slots are added back as found data, overriding any type of maintenance (preventive, corrective, or other). However, the systematically excluded slots at 02:50 UTC and 14:50 UTC are never restored, even if a Data Restoration record covers those times.</p>
+
+        <p style="color: #000000; font-weight: normal; margin-top: 12px;"><strong>Note:</strong> All times are in UTC for satellite data processing.</p>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- Loading overlay -->
+<div id="loadingOverlay" class="loading-overlay" style="display: none;">
+  <div class="loading-spinner"></div>
+  <div id="loadingText">Loading quarterly data...</div>
+</div>
+
+<script>
+(function(){
+  const BASE_DAILY = "http://radsats36/raw_file_list/avail_data/daily";
+  const MAINT_API = "http://radsats36:9000/api/maintenance";
+  const STATIONS_CONFIG_API = "http://radsats36:9000/radsat_availability_json/radsat_image.json";
+  const FILE_LIST_API = "http://radsats36:9000/api/proxy/file-list";
+  const SLOTS_PER_DAY = 240;
+  const TARGET_MINUTES = ['00','06','12','18','24','30','36','42','48','54'];
+  const END_MINUTES = ['05','11','17','23','29','35','41','47','53','59'];
+  
+  // ===== CONFIGURABLE STATION NAMES =====
+  const TMS_FULL_NAME = 'TMS (raw)';           // Full name used in maintenance records
+  const TCR_FULL_NAME = 'TCR (raw)';           // Full name used in maintenance records
+  const TMS_BASE_NAME = 'TMS';                 // Base name used in JSON files (*_TMS.json)
+  const TCR_BASE_NAME = 'TCR';                 // Base name used in JSON files (*_TCR.json)
+  const TMS_DISPLAY_NAME = 'TMS';              // Display name shown in UI
+  const TCR_DISPLAY_NAME = 'TCR';              // Display name shown in UI
+  
+  // Satellite configuration
+  const HIMAWARI_FULL_NAME = 'Internet IR';    // Maintenance records
+  const HIMAWARI_DISPLAY_NAME = 'Himawari';    // Display name shown in UI
+  // ==================================================================================
+
+  const ARCHIVES = [TMS_FULL_NAME, TCR_FULL_NAME];
+  
+  // Satellite constants
+  const SATELLITE_SLOTS_PER_DAY = 144;
+  const SATELLITE_EXPECTED_SLOTS_PER_DAY = 142; // 144 - 2 (excluding 02:50 and 14:50 UTC)
+  const SATELLITE_TARGET_MINUTES = ['00','10','20','30','40','50'];
+  const SATELLITE_END_MINUTES = ['09','19','29','39','49','59'];
+  const EXCLUDED_UTC_SLOTS = [17, 89]; // 02:50 UTC = slot 17 (2*6+5), 14:50 UTC = slot 89 (14*6+5)
+
+  // Hardcoded default config - keep in sync with availability page
+  const DEFAULT_CONFIG = 'radsat_image';
+
+  const yearSel = document.getElementById('yearSel');
+  const quarterSel = document.getElementById('quarterSel');
+  const loadBtn = document.getElementById('loadBtn');
+  const statusEl = document.getElementById('status');
+  const monthsContainer = document.getElementById('monthsContainer');
+  const satelliteMonthsContainer = document.getElementById('satelliteMonthsContainer');
+  const loadingOverlay = document.getElementById('loadingOverlay');
+  const loadingText = document.getElementById('loadingText');
+  const copyButtonsCard = document.getElementById('copyButtonsCard');
+  const satelliteCopyButtonsCard = document.getElementById('satelliteCopyButtonsCard');
+  const copyStatus = document.getElementById('copyStatus');
+  const satelliteCopyStatus = document.getElementById('satelliteCopyStatus');
+  const satelliteMaintenanceRemarks = document.getElementById('satelliteMaintenanceRemarks');
+  let currentMonthsResults = null;
+  let currentSatelliteResults = null;
+  let currentActiveTab = 'radar';
+
+  // Tab functionality
+  function initializeTabs() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const tabId = button.getAttribute('data-tab');
+        
+        // Update button states
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        
+        // Update content visibility
+        tabContents.forEach(content => {
+          content.classList.remove('active');
+          if (content.id === `${tabId}-tab`) {
+            content.classList.add('active');
+          }
+        });
+        
+        currentActiveTab = tabId;
+        
+        // Show appropriate copy buttons
+        if (tabId === 'radar') {
+          copyButtonsCard.style.display = currentMonthsResults ? 'block' : 'none';
+          satelliteCopyButtonsCard.style.display = 'none';
+        } else if (tabId === 'satellite') {
+          copyButtonsCard.style.display = 'none';
+          satelliteCopyButtonsCard.style.display = currentSatelliteResults ? 'block' : 'none';
+        }
+      });
+    });
+  }
+
+  function showLoading(text = 'Loading...') {
+    loadingText.textContent = text;
+    loadingOverlay.style.display = 'flex';
+  }
+
+  function hideLoading() {
+    loadingOverlay.style.display = 'none';
+  }
+
+  function updateStatus(txt){
+    statusEl.textContent = txt;
+  }
+
+  function updateCopyStatus(txt, isError = false) {
+    const statusElement = currentActiveTab === 'radar' ? copyStatus : satelliteCopyStatus;
+    statusElement.textContent = txt;
+    statusElement.style.color = isError ? '#dc2626' : '#6b7280';
+    setTimeout(() => {
+      statusElement.textContent = '';
+    }, 3000);
+  }
+
+  async function copyToClipboard(text) {
+    // Try modern clipboard API first
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch (err) {
+        console.error('Clipboard API failed: ', err);
+      }
+    }
+    
+    // Fallback to execCommand method
+    try {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      const result = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      return result;
+    } catch (err) {
+      console.error('Fallback copy failed: ', err);
+      return false;
+    }
+  }
+
+  // Copy functions for Excel data
+  function copyTmsHours() {
+    if (!currentMonthsResults || currentMonthsResults.length !== 3) {
+      updateCopyStatus('Please load quarterly data first', true);
+      return;
+    }
+
+    const tmsData = currentMonthsResults.map(month => month.stats[TMS_FULL_NAME].total_found).join('\n');
+
+    copyToClipboard(tmsData).then(success => {
+      if (success) {
+        updateCopyStatus('Operation Hours of TMSWRS copied!');
+      } else {
+        updateCopyStatus('Failed to copy TMS Hours', true);
+      }
+    });
+  }
+
+  function copyTcrHours() {
+    if (!currentMonthsResults || currentMonthsResults.length !== 3) {
+      updateCopyStatus('Please load quarterly data first', true);
+      return;
+    }
+
+    const tcrData = currentMonthsResults.map(month => month.stats[TCR_FULL_NAME].total_found).join('\n');
+
+    copyToClipboard(tcrData).then(success => {
+      if (success) {
+        updateCopyStatus('Operation Hours of TCWRS copied!');
+      } else {
+        updateCopyStatus('Failed to copy TCR Hours', true);
+      }
+    });
+  }
+
+  function copyAndScans() {
+    if (!currentMonthsResults || currentMonthsResults.length !== 3) {
+      updateCopyStatus('Please load quarterly data first', true);
+      return;
+    }
+
+    const andData = currentMonthsResults.map(month => month.combined.total_found_and).join('\t');
+
+    copyToClipboard(andData).then(success => {
+      if (success) {
+        updateCopyStatus('AND Scans copied to clipboard!');
+      } else {
+        updateCopyStatus('Failed to copy AND Scans', true);
+      }
+    });
+  }
+
+  function copyOrAvailability() {
+    if (!currentMonthsResults || currentMonthsResults.length !== 3) {
+      updateCopyStatus('Please load quarterly data first', true);
+      return;
+    }
+
+    const orFoundData = currentMonthsResults.map(month => month.combined.total_found_or).join('\t');
+    const orExpectedData = currentMonthsResults.map(month => month.combined.total_expected).join('\t');
+    const combined = `${orFoundData}\n${orExpectedData}`;
+
+    copyToClipboard(combined).then(success => {
+      if (success) {
+        updateCopyStatus('Data Availability of TMS and TCR (scan) copied!');
+      } else {
+        updateCopyStatus('Failed to copy OR Availability', true);
+      }
+    });
+  }
+
+  function copyTcrAvailability() {
+    if (!currentMonthsResults || currentMonthsResults.length !== 3) {
+      updateCopyStatus('Please load quarterly data first', true);
+      return;
+    }
+
+    const tcrFoundData = currentMonthsResults.map(month => (month.stats[TCR_FULL_NAME].total_found / 10).toFixed(1)).join('\t');
+    const tcrExpectedData = currentMonthsResults.map(month => {
+      const preventiveAdj = month.stats[TCR_FULL_NAME].preventive_adjustment;
+      if (preventiveAdj.total_expected_minus_preventive > 0 && preventiveAdj.total_expected_minus_preventive !== month.stats[TCR_FULL_NAME].total_expected) {
+        return (preventiveAdj.total_expected_minus_preventive / 10).toFixed(1);
+      } else {
+        return (month.stats[TCR_FULL_NAME].total_expected / 10).toFixed(1);
+      }
+    }).join('\t');
+    const combined = `${tcrFoundData}\n${tcrExpectedData}`;
+
+    copyToClipboard(combined).then(success => {
+      if (success) {
+        updateCopyStatus('Data Availability of TCR (hour) copied!');
+      } else {
+        updateCopyStatus('Failed to copy TCR Availability', true);
+      }
+    });
+  }
+
+  // Satellite copy functions
+  function copyHimawariAvailability() {
+    if (!currentSatelliteResults || currentSatelliteResults.length !== 3) {
+      updateCopyStatus('Please load quarterly data first', true);
+      return;
+    }
+
+    const himawariFoundData = currentSatelliteResults.map(month => month.total_found).join('\t');
+    const himawariExpectedData = currentSatelliteResults.map(month => {
+      const preventiveAdj = month.preventive_adjustment;
+      if (preventiveAdj.total_expected_minus_preventive > 0 && preventiveAdj.total_expected_minus_preventive !== month.total_expected) {
+        return preventiveAdj.total_expected_minus_preventive;
+      } else {
+        return month.total_expected;
+      }
+    }).join('\t');
+    const combined = `${himawariFoundData}\n${himawariExpectedData}`;
+
+    copyToClipboard(combined).then(success => {
+      if (success) {
+        updateCopyStatus('Data Availability of Geostationary Satellite copied!');
+      } else {
+        updateCopyStatus('Failed to copy Satellite Availability', true);
+      }
+    });
+  }
+
+  // Function to extract selected year maintenance remarks for Internet IR
+  function extractSelectedYearMaintenanceRemarks(maintenanceData, selectedYear) {
+    const year = selectedYear || new Date().getFullYear();
+    const internetIRRemarks = [];
+    
+    for (const record of maintenanceData || []) {
+      if (record.station !== HIMAWARI_FULL_NAME) continue;
+      if (!record.startDate || !record.remarks) continue;
+      
+      // Parse the start date and convert to UTC if needed
+      let startDate = new Date(record.startDate.replace('T', ' '));
+      
+      // If timezone is HKT, convert to UTC
+      if (record.timezone === 'HKT') {
+        startDate = new Date(startDate.getTime() - (8 * 60 * 60 * 1000));
+      }
+      
+      // Check if the UTC date is in the selected year
+      if (startDate.getUTCFullYear() === year) {
+        internetIRRemarks.push({
+          remarks: record.remarks,
+          date: startDate
+        });
+      }
+    }
+    
+    // Sort by date (earliest first) and return just the remarks
+    internetIRRemarks.sort((a, b) => a.date - b.date);
+    return internetIRRemarks.map(item => item.remarks);
+  }
+
+  // Function to render maintenance remarks
+  function renderMaintenanceRemarks(maintenanceData, selectedYear = null) {
+    const remarks = extractSelectedYearMaintenanceRemarks(maintenanceData, selectedYear);
+    
+    if (remarks.length === 0) {
+      const displayYear = selectedYear || new Date().getFullYear();
+      satelliteMaintenanceRemarks.innerHTML = `<p style="color: #6b7280; font-style: italic;">No maintenance remarks found for ${displayYear}.</p>`;
+      return;
+    }
+    
+    // Use manual numbering instead of <ol> to ensure copyability
+    const container = document.createElement('div');
+    remarks.forEach((remark, index) => {
+      const div = document.createElement('div');
+      div.style.marginBottom = '6px';
+      div.innerHTML = `${index + 1}. ${remark}`;
+      container.appendChild(div);
+    });
+    
+    satelliteMaintenanceRemarks.innerHTML = '';
+    satelliteMaintenanceRemarks.appendChild(container);
+  }
+
+  // Function to extract quarterly maintenance remarks
+  function extractQuarterlyMaintenanceRemarks(maintenanceData, year, quarter) {
+    // Get all remarks for the year first
+    const yearRemarks = [];
+    
+    for (const record of maintenanceData || []) {
+      if (record.station !== HIMAWARI_FULL_NAME) continue;
+      if (!record.startDate || !record.remarks) continue;
+      
+      // Parse the start date and convert to UTC if needed
+      let startDate = new Date(record.startDate.replace('T', ' '));
+      
+      // If timezone is HKT, convert to UTC
+      if (record.timezone === 'HKT') {
+        startDate = new Date(startDate.getTime() - (8 * 60 * 60 * 1000));
+      }
+      
+      // Check if the UTC date is in the current year
+      if (startDate.getUTCFullYear() === year) {
+        yearRemarks.push({
+          remarks: record.remarks,
+          date: startDate
+        });
+      }
+    }
+    
+    // Sort by date (earliest first)
+    yearRemarks.sort((a, b) => a.date - b.date);
+    
+    // Find which remarks fall in the current quarter
+    const quarterStartMonth = (quarter - 1) * 3 + 1; // Q1=1, Q2=4, Q3=7, Q4=10
+    const quarterEndMonth = quarterStartMonth + 2; // Q1=3, Q2=6, Q3=9, Q4=12
+    
+    const quarterRemarks = [];
+    let runningNumber = 0;
+    
+    for (const remarkData of yearRemarks) {
+      runningNumber++;
+      const remarkMonth = remarkData.date.getUTCMonth() + 1; // 1-12
+      
+      if (remarkMonth >= quarterStartMonth && remarkMonth <= quarterEndMonth) {
+        quarterRemarks.push(`${runningNumber}. ${remarkData.remarks}`);
+      }
+    }
+    
+    return quarterRemarks;
+  }
+
+  // Function to copy quarterly remarks
+  function copyQuarterlyRemarks() {
+    if (currentSatelliteResults && currentSatelliteResults.length > 0) {
+      // Data is loaded, use current selections
+      const year = parseInt(yearSel.value, 10);
+      const quarter = parseInt(quarterSel.value, 10);
+      
+      // We need to load maintenance data to get remarks
+      loadMaintenance().then(maintenance => {
+        const quarterlyRemarks = extractQuarterlyMaintenanceRemarks(maintenance, year, quarter);
+        
+        if (quarterlyRemarks.length === 0) {
+          updateCopyStatus('No maintenance remarks found for this quarter', true);
+          return;
+        }
+
+        const remarksText = quarterlyRemarks.join('\n');
+
+        copyToClipboard(remarksText).then(success => {
+          if (success) {
+            const quarterName = ['Q1', 'Q2', 'Q3', 'Q4'][quarter - 1];
+            updateCopyStatus(`${quarterName} ${year} Geostationary Satellite Remarks copied! (${quarterlyRemarks.length} items)`);
+          } else {
+            updateCopyStatus('Failed to copy quarterly remarks', true);
+          }
+        });
+      }).catch(err => {
+        updateCopyStatus('Error loading maintenance data', true);
+        console.error('Error loading maintenance:', err);
+      });
+    } else {
+      updateCopyStatus('Please load quarterly data first', true);
+    }
+  }
+
+  // Update title with selected year
+  function updateSatelliteMaintenanceTitle(year = null) {
+    const selectedYear = year || yearSel.value || new Date().getFullYear();
+    const titleElement = document.getElementById('satelliteMaintenanceTitle');
+    if (titleElement) {
+      titleElement.innerHTML = `<a href="https://www.data.jma.go.jp/mscweb/en/oper/bulletin_list_H9.html" target="_blank" style="color: #c2410c; text-decoration: underline;">Himawari-9 Operational Schedule</a> (${selectedYear})`;
+    }
+  }
+
+  // Add event listeners for copy buttons
+  document.getElementById('copyTmsHours').addEventListener('click', copyTmsHours);
+  document.getElementById('copyTcrHours').addEventListener('click', copyTcrHours);
+  document.getElementById('copyAndScans').addEventListener('click', copyAndScans);
+  document.getElementById('copyOrAvailability').addEventListener('click', copyOrAvailability);
+  document.getElementById('copyTcrAvailability').addEventListener('click', copyTcrAvailability);
+  document.getElementById('copyHimawariAvailability').addEventListener('click', copyHimawariAvailability);
+  document.getElementById('copyQuarterlyRemarks').addEventListener('click', copyQuarterlyRemarks);
+
+  function populateYearSelector(){
+    yearSel.innerHTML = '';
+    const now = new Date(); const y = now.getFullYear();
+    // Dynamic range: 10 years back to 1 year forward from current year
+    const startYear = y - 10;
+    const endYear = y + 1;
+    for(let i=startYear;i<=endYear;i++){
+      const o=document.createElement('option'); o.value=String(i); o.textContent=String(i);
+      if(i===y) o.selected=true; yearSel.appendChild(o);
+    }
+  }
+
+  function setCurrentQuarter() {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1; // 1-12
+    
+    let targetYear, targetQuarter;
+    
+    if (currentMonth <= 3) {
+      // Q1
+      targetYear = currentYear;
+      targetQuarter = 1;
+    } else if (currentMonth <= 6) {
+      // Q2
+      targetYear = currentYear;
+      targetQuarter = 2;
+    } else if (currentMonth <= 9) {
+      // Q3
+      targetYear = currentYear;
+      targetQuarter = 3;
+    } else {
+      // Q4
+      targetYear = currentYear;
+      targetQuarter = 4;
+    }
+    
+    yearSel.value = String(targetYear);
+    quarterSel.value = String(targetQuarter);
+  }
+
+  populateYearSelector();
+  setCurrentQuarter();
+  initializeTabs();
+  updateSatelliteMaintenanceTitle(); // Initialize the title with current year
+
+  async function fetchJson(url, timeout=15000){
+    const key = `f:${url}`;
+    const cached = sessionStorage.getItem(key);
+    if(cached){ try{ return JSON.parse(cached); }catch{ sessionStorage.removeItem(key); } }
+    const controller = new AbortController();
+    const id = setTimeout(()=>controller.abort(), timeout);
+    try{
+      const resp = await fetch(url, {signal: controller.signal, cache:"no-store"});
+      clearTimeout(id);
+      if(!resp.ok){ throw new Error(`${resp.status} ${resp.statusText}`); }
+      const js = await resp.json();
+      sessionStorage.setItem(key, JSON.stringify(js));
+      return js;
+    }catch(e){
+      clearTimeout(id);
+      throw e;
+    }
+  }
+
+  async function fetchText(url, timeout=15000){
+    const key = `t:${url}`;
+    const cached = sessionStorage.getItem(key);
+    if(cached){ return cached; }
+    const controller = new AbortController();
+    const id = setTimeout(()=>controller.abort(), timeout);
+    try{
+      const resp = await fetch(url, {signal: controller.signal, cache:"no-store"});
+      clearTimeout(id);
+      if(!resp.ok){ throw new Error(`${resp.status} ${resp.statusText}`); }
+      const text = await resp.text();
+      sessionStorage.setItem(key, text);
+      return text;
+    }catch(e){
+      clearTimeout(id);
+      throw e;
+    }
+  }
+
+  function monthDateRange(yyyymm){
+    const y = Number(yyyymm.slice(0,4)), m = Number(yyyymm.slice(4)) - 1;
+    const res=[]; const d=new Date(y,m,1);
+    while(d.getMonth() === m){
+      res.push(`${d.getFullYear().toString().padStart(4,'0')}${(d.getMonth()+1).toString().padStart(2,'0')}${d.getDate().toString().padStart(2,'0')}`);
+      d.setDate(d.getDate()+1);
+    }
+    return res;
+  }
+  function monthsForQuarter(year, quarter){
+    const start = (quarter-1)*3+1; const months=[];
+    for(let i=0;i<3;i++){ const m=start+i; months.push(String(year)+String(m).padStart(2,'0')); }
+    return months;
+  }
+  function tokensToSlots(tokens){
+    const out=[];
+    for(const tok of (tokens||[])){
+      if(typeof tok !== 'string' || tok.length !== 10) continue;
+      const hh = Number(tok.slice(6,8)), mm = Number(tok.slice(8,10));
+      const s = hh*10 + Math.floor(mm/6);
+      if(s>=0 && s<SLOTS_PER_DAY) out.push(s);
+    }
+    return Array.from(new Set(out)).sort((a,b)=>a-b);
+  }
+
+  // Satellite slot conversion functions
+  function tokensToSatelliteSlots(tokens){
+    const out=[];
+    for(const tok of (tokens||[])){
+      if(typeof tok !== 'string' || tok.length !== 12) continue; // YYYYMMDDHHMM format
+      const hh = Number(tok.slice(8,10)), mm = Number(tok.slice(10,12));
+      const s = hh*6 + Math.floor(mm/10);
+      if(s>=0 && s<SATELLITE_SLOTS_PER_DAY) out.push(s);
+    }
+    return Array.from(new Set(out)).sort((a,b)=>a-b);
+  }
+
+  function parseMaintenanceDatetime(s){
+    if(!s) return null;
+    let t = String(s).trim().replace('T',' ');
+    const parts = t.split(' ');
+    if(parts.length >= 2){
+      let datePart = parts[0], timePart = parts[1];
+      if(timePart.length === 5) timePart += ":00";
+      const d = new Date((datePart + " " + timePart).replace(/-/g,'/'));
+      if(!isNaN(d.getTime())) return d;
+    }
+    const dt = new Date(t);
+    if(!isNaN(dt.getTime())) return dt;
+    return null;
+  }
+
+  // Convert HKT to UTC (HKT - 8 hours)
+  function convertHKTToUTC(hktDate) {
+    return new Date(hktDate.getTime() - (8 * 60 * 60 * 1000));
+  }
+
+  function roundTimeToSlotDown(dt){
+    const minute = dt.getMinutes(); let chosen = Number(TARGET_MINUTES[0]);
+    for(let i=0;i<TARGET_MINUTES.length;i++){ const m = Number(TARGET_MINUTES[i]); if(minute>=m) chosen = m; }
+    const d = new Date(dt);
+    if(minute < Number(TARGET_MINUTES[0])){ d.setHours(d.getHours()-1); d.setMinutes(54,0,0); return d; } else { d.setMinutes(chosen,0,0); return d; }
+  }
+  function roundTimeToSlotUp(dt){
+    const minute = dt.getMinutes();
+    for(let i=0;i<END_MINUTES.length;i++){
+      const em = Number(END_MINUTES[i]);
+      if(minute <= em){ const d=new Date(dt); d.setMinutes(em,59,0); return d; }
+    }
+    const d=new Date(dt); d.setHours(d.getHours()+1); d.setMinutes(5,59,0); return d;
+  }
+
+  // Satellite slot functions
+  function roundTimeToSatelliteSlotDown(dt){
+    const minute = dt.getMinutes(); let chosen = Number(SATELLITE_TARGET_MINUTES[0]);
+    for(let i=0;i<SATELLITE_TARGET_MINUTES.length;i++){ const m = Number(SATELLITE_TARGET_MINUTES[i]); if(minute>=m) chosen = m; }
+    const d = new Date(dt);
+    if(minute < Number(SATELLITE_TARGET_MINUTES[0])){ d.setHours(d.getHours()-1); d.setMinutes(50,0,0); return d; } else { d.setMinutes(chosen,0,0); return d; }
+  }
+  function roundTimeToSatelliteSlotUp(dt){
+    const minute = dt.getMinutes();
+    for(let i=0;i<SATELLITE_END_MINUTES.length;i++){
+      const em = Number(SATELLITE_END_MINUTES[i]);
+      if(minute <= em){ const d=new Date(dt); d.setMinutes(em,59,0); return d; }
+    }
+    const d=new Date(dt); d.setHours(d.getHours()+1); d.setMinutes(9,59,0); return d;
+  }
+
+  function parseDateYYYYMMDD(s){ const y=Number(s.slice(0,4)), m=Number(s.slice(4,6))-1, d=Number(s.slice(6,8)); return new Date(y,m,d); }
+
+  function getMaintenanceSlotsForArchiveOnDate(archiveType, dateStr, maintenanceData){
+    const dateObj = parseDateYYYYMMDD(dateStr);
+    const dateStart = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), 0,0,0,0);
+    const dateEnd = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), 23,59,59,999);
+    const slots = new Set();
+    for(const rec of (maintenanceData||[])){
+      if(rec.station !== archiveType) continue;
+      if(rec.type && String(rec.type).toLowerCase() === 'data restoration') continue;
+      const start = parseMaintenanceDatetime(rec.startDate || rec.start || rec.start_time || rec.start_time_local || '');
+      const end = parseMaintenanceDatetime(rec.endDate || rec.end || rec.end_time || rec.end_time_local || '');
+      if(!start || !end) continue;
+      if(end < dateStart || start > dateEnd) continue;
+      const slotStart = roundTimeToSlotDown(start);
+      const slotEnd = roundTimeToSlotUp(end);
+      const cur = new Date(Math.max(slotStart.getTime(), dateStart.getTime()));
+      const last = new Date(Math.min(slotEnd.getTime(), dateEnd.getTime()));
+      for(let t = new Date(cur); t.getTime() <= last.getTime(); t.setMinutes(t.getMinutes()+6)){
+        if(t.getFullYear()===dateObj.getFullYear() && t.getMonth()===dateObj.getMonth() && t.getDate()===dateObj.getDate()){
+          const hh=t.getHours(), mm=t.getMinutes();
+          const idx = TARGET_MINUTES.indexOf(String(mm).padStart(2,'0'));
+          if(idx >= 0){ const slot = hh*10 + idx; if(slot>=0 && slot<SLOTS_PER_DAY) slots.add(slot); }
+        }
+      }
+    }
+    return slots;
+  }
+
+  function getPreventiveSlotsForArchiveOnDate(archiveType, dateStr, maintenanceData){
+    const dateObj = parseDateYYYYMMDD(dateStr);
+    const dateStart = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), 0,0,0,0);
+    const dateEnd = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), 23,59,59,999);
+    const slots = new Set();
+    for(const rec of (maintenanceData||[])){
+      if(rec.station !== archiveType) continue;
+      if(rec.type && !String(rec.type).toLowerCase().includes('preventive')) continue;
+      const start = parseMaintenanceDatetime(rec.startDate || rec.start || rec.start_time || '');
+      const end = parseMaintenanceDatetime(rec.endDate || rec.end || rec.end_time || '');
+      if(!start || !end) continue;
+      if(end < dateStart || start > dateEnd) continue;
+      const slotStart = roundTimeToSlotDown(start);
+      const slotEnd = roundTimeToSlotUp(end);
+      const cur = new Date(Math.max(slotStart.getTime(), dateStart.getTime()));
+      const last = new Date(Math.min(slotEnd.getTime(), dateEnd.getTime()));
+      for(let t=new Date(cur); t.getTime()<=last.getTime(); t.setMinutes(t.getMinutes()+6)){
+        if(t.getFullYear()===dateObj.getFullYear() && t.getMonth()===dateObj.getMonth() && t.getDate()===dateObj.getDate()){
+          const hh=t.getHours(), mm=t.getMinutes();
+          const idx = TARGET_MINUTES.indexOf(String(mm).padStart(2,'0'));
+          if(idx >= 0){ const slot = hh*10 + idx; if(slot>=0 && slot<SLOTS_PER_DAY) slots.add(slot); }
+        }
+      }
+    }
+    return slots;
+  }
+
+  // NEW: Data Restoration slots for radar
+  function getDataRestorationSlotsForArchiveOnDate(archiveType, dateStr, maintenanceData){
+    const dateObj = parseDateYYYYMMDD(dateStr);
+    const dateStart = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), 0,0,0,0);
+    const dateEnd = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), 23,59,59,999);
+    const slots = new Set();
+    for(const rec of (maintenanceData||[])){
+      if(rec.station !== archiveType) continue;
+      if(!rec.type || String(rec.type).toLowerCase() !== 'data restoration') continue;
+      const start = parseMaintenanceDatetime(rec.startDate || rec.start || rec.start_time || '');
+      const end = parseMaintenanceDatetime(rec.endDate || rec.end || rec.end_time || '');
+      if(!start || !end) continue;
+      if(end < dateStart || start > dateEnd) continue;
+      const slotStart = roundTimeToSlotDown(start);
+      const slotEnd = roundTimeToSlotUp(end);
+      const cur = new Date(Math.max(slotStart.getTime(), dateStart.getTime()));
+      const last = new Date(Math.min(slotEnd.getTime(), dateEnd.getTime()));
+      for(let t=new Date(cur); t.getTime()<=last.getTime(); t.setMinutes(t.getMinutes()+6)){
+        if(t.getFullYear()===dateObj.getFullYear() && t.getMonth()===dateObj.getMonth() && t.getDate()===dateObj.getDate()){
+          const hh=t.getHours(), mm=t.getMinutes();
+          const idx = TARGET_MINUTES.indexOf(String(mm).padStart(2,'0'));
+          if(idx >= 0){ const slot = hh*10 + idx; if(slot>=0 && slot<SLOTS_PER_DAY) slots.add(slot); }
+        }
+      }
+    }
+    return slots;
+  }
+
+  // NEW: Satellite maintenance - exclude Data Restoration records
+  function getSatelliteMaintenanceSlotsForDate(dateStr, maintenanceData){
+    const dateObj = parseDateYYYYMMDD(dateStr);
+    const dateStart = new Date(Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), 0,0,0,0));
+    const dateEnd = new Date(Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), 23,59,59,999));
+    const slots = new Set();
+    
+    for(const rec of (maintenanceData||[])){
+      if(rec.station !== HIMAWARI_FULL_NAME) continue;
+      if(rec.type && String(rec.type).toLowerCase() === 'data restoration') continue;
+      let startHKT = parseMaintenanceDatetime(rec.startDate || rec.start || rec.start_time || '');
+      let endHKT = parseMaintenanceDatetime(rec.endDate || rec.end || rec.end_time || '');
+      if(!startHKT || !endHKT) continue;
+      
+      // If timezone is specified as HKT, treat the parsed datetime as HKT
+      // Otherwise assume it's already in the correct timezone
+      let start, end;
+      if(rec.timezone === 'HKT') {
+        // The parsed datetime is in local time, but we need to treat it as HKT
+        // Create new dates in HKT (UTC+8) and then convert to UTC
+        start = new Date(Date.UTC(
+          startHKT.getFullYear(), 
+          startHKT.getMonth(), 
+          startHKT.getDate(), 
+          startHKT.getHours() - 8, // Convert HKT to UTC
+          startHKT.getMinutes(), 
+          startHKT.getSeconds()
+        ));
+        end = new Date(Date.UTC(
+          endHKT.getFullYear(), 
+          endHKT.getMonth(), 
+          endHKT.getDate(), 
+          endHKT.getHours() - 8, // Convert HKT to UTC
+          endHKT.getMinutes(), 
+          endHKT.getSeconds()
+        ));
+      } else {
+        // Convert HKT to UTC using the original method
+        start = convertHKTToUTC(startHKT);
+        end = convertHKTToUTC(endHKT);
+      }
+      
+      if(end < dateStart || start > dateEnd) continue;
+      
+      const slotStart = roundTimeToSatelliteSlotDown(start);
+      const slotEnd = roundTimeToSatelliteSlotUp(end);
+      const cur = new Date(Math.max(slotStart.getTime(), dateStart.getTime()));
+      const last = new Date(Math.min(slotEnd.getTime(), dateEnd.getTime()));
+      
+      for(let t = new Date(cur); t.getTime() <= last.getTime(); t.setMinutes(t.getMinutes()+10)){
+        if(t.getUTCFullYear()===dateObj.getFullYear() && t.getUTCMonth()===dateObj.getMonth() && t.getUTCDate()===dateObj.getDate()){
+          const hh=t.getUTCHours(), mm=t.getUTCMinutes();
+          const idx = SATELLITE_TARGET_MINUTES.indexOf(String(mm).padStart(2,'0'));
+          if(idx >= 0){ 
+            const slot = hh*6 + idx; 
+            if(slot>=0 && slot<SATELLITE_SLOTS_PER_DAY) {
+              slots.add(slot); 
+            }
+          }
+        }
+      }
+    }
+    return slots;
+  }
+
+  function getSatellitePreventiveSlotsForDate(dateStr, maintenanceData){
+    const dateObj = parseDateYYYYMMDD(dateStr);
+    const dateStart = new Date(Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), 0,0,0,0));
+    const dateEnd = new Date(Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), 23,59,59,999));
+    const slots = new Set();
+    
+    for(const rec of (maintenanceData||[])){
+      if(rec.station !== HIMAWARI_FULL_NAME) continue;
+      if(rec.type && !String(rec.type).toLowerCase().includes('preventive')) continue;
+      
+      let startHKT = parseMaintenanceDatetime(rec.startDate || rec.start || rec.start_time || '');
+      let endHKT = parseMaintenanceDatetime(rec.endDate || rec.end || rec.end_time || '');
+      if(!startHKT || !endHKT) continue;
+      
+      // If timezone is specified as HKT, treat the parsed datetime as HKT
+      let start, end;
+      if(rec.timezone === 'HKT') {
+        // The parsed datetime is in local time, but we need to treat it as HKT
+        // Create new dates in HKT (UTC+8) and then convert to UTC
+        start = new Date(Date.UTC(
+          startHKT.getFullYear(), 
+          startHKT.getMonth(), 
+          startHKT.getDate(), 
+          startHKT.getHours() - 8, // Convert HKT to UTC
+          startHKT.getMinutes(), 
+          startHKT.getSeconds()
+        ));
+        end = new Date(Date.UTC(
+          endHKT.getFullYear(), 
+          endHKT.getMonth(), 
+          endHKT.getDate(), 
+          endHKT.getHours() - 8, // Convert HKT to UTC
+          endHKT.getMinutes(), 
+          endHKT.getSeconds()
+        ));
+      } else {
+        // Convert HKT to UTC using the original method
+        start = convertHKTToUTC(startHKT);
+        end = convertHKTToUTC(endHKT);
+      }
+      
+      if(end < dateStart || start > dateEnd) continue;
+      
+      const slotStart = roundTimeToSatelliteSlotDown(start);
+      const slotEnd = roundTimeToSatelliteSlotUp(end);
+      const cur = new Date(Math.max(slotStart.getTime(), dateStart.getTime()));
+      const last = new Date(Math.min(slotEnd.getTime(), dateEnd.getTime()));
+      
+      for(let t = new Date(cur); t.getTime() <= last.getTime(); t.setMinutes(t.getMinutes()+10)){
+        if(t.getUTCFullYear()===dateObj.getFullYear() && t.getUTCMonth()===dateObj.getMonth() && t.getUTCDate()===dateObj.getDate()){
+          const hh=t.getUTCHours(), mm=t.getUTCMinutes();
+          const idx = SATELLITE_TARGET_MINUTES.indexOf(String(mm).padStart(2,'0'));
+          if(idx >= 0){ 
+            const slot = hh*6 + idx; 
+            if(slot>=0 && slot<SATELLITE_SLOTS_PER_DAY) {
+              slots.add(slot); 
+            }
+          }
+        }
+      }
+    }
+    return slots;
+  }
+
+  // NEW: Data Restoration slots for satellite (excludes 02:50/14:50 UTC)
+  function getSatelliteDataRestorationSlotsForDate(dateStr, maintenanceData){
+    const dateObj = parseDateYYYYMMDD(dateStr);
+    const dateStart = new Date(Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), 0,0,0,0));
+    const dateEnd = new Date(Date.UTC(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), 23,59,59,999));
+    const slots = new Set();
+    for(const rec of (maintenanceData||[])){
+      if(rec.station !== HIMAWARI_FULL_NAME) continue;
+      if(!rec.type || String(rec.type).toLowerCase() !== 'data restoration') continue;
+      let startHKT = parseMaintenanceDatetime(rec.startDate || rec.start || rec.start_time || '');
+      let endHKT = parseMaintenanceDatetime(rec.endDate || rec.end || rec.end_time || '');
+      if(!startHKT || !endHKT) continue;
+      let start, end;
+      if(rec.timezone === 'HKT') {
+        start = new Date(Date.UTC(startHKT.getFullYear(), startHKT.getMonth(), startHKT.getDate(), startHKT.getHours() - 8, startHKT.getMinutes(), startHKT.getSeconds()));
+        end = new Date(Date.UTC(endHKT.getFullYear(), endHKT.getMonth(), endHKT.getDate(), endHKT.getHours() - 8, endHKT.getMinutes(), endHKT.getSeconds()));
+      } else {
+        start = convertHKTToUTC(startHKT);
+        end = convertHKTToUTC(endHKT);
+      }
+      if(end < dateStart || start > dateEnd) continue;
+      const slotStart = roundTimeToSatelliteSlotDown(start);
+      const slotEnd = roundTimeToSatelliteSlotUp(end);
+      const cur = new Date(Math.max(slotStart.getTime(), dateStart.getTime()));
+      const last = new Date(Math.min(slotEnd.getTime(), dateEnd.getTime()));
+      for(let t = new Date(cur); t.getTime() <= last.getTime(); t.setMinutes(t.getMinutes()+10)){
+        if(t.getUTCFullYear()===dateObj.getFullYear() && t.getUTCMonth()===dateObj.getMonth() && t.getUTCDate()===dateObj.getDate()){
+          const hh=t.getUTCHours(), mm=t.getUTCMinutes();
+          const idx = SATELLITE_TARGET_MINUTES.indexOf(String(mm).padStart(2,'0'));
+          if(idx >= 0){
+            const slot = hh*6 + idx;
+            if(slot>=0 && slot<SATELLITE_SLOTS_PER_DAY){
+              // CRITICAL: Never restore excluded UTC slots (02:50=slot17, 14:50=slot89)
+              if(!EXCLUDED_UTC_SLOTS.includes(slot)){
+                slots.add(slot);
+              }
+            }
+          }
+        }
+      }
+    }
+    return slots;
+  }
+
+  function slotToDatetime(date_str, slot){ const hour=Math.floor(slot/10), minute_idx=slot%10; const mm=TARGET_MINUTES[minute_idx]; return `${date_str} ${String(hour).padStart(2,'0')}:${mm}`; }
+  function slotToEndDatetime(date_str, slot){ const hour=Math.floor(slot/10), minute_idx=slot%10; const mm=END_MINUTES[minute_idx]; return `${date_str} ${String(hour).padStart(2,'0')}:${mm}`; }
+  
+  // Satellite slot to datetime functions
+  function satelliteSlotToDatetime(date_str, slot){ const hour=Math.floor(slot/6), minute_idx=slot%6; const mm=SATELLITE_TARGET_MINUTES[minute_idx]; return `${date_str} ${String(hour).padStart(2,'0')}:${mm}`; }
+  function satelliteSlotToEndDatetime(date_str, slot){ const hour=Math.floor(slot/6), minute_idx=slot%6; const mm=SATELLITE_END_MINUTES[minute_idx]; return `${date_str} ${String(hour).padStart(2,'0')}:${mm}`; }
+  
+  function addDays(yyyymmdd, delta){ const y=Number(yyyymmdd.slice(0,4)), m=Number(yyyymmdd.slice(4,6))-1, d=Number(yyyymmdd.slice(6,8)); const dt=new Date(y,m,d); dt.setDate(dt.getDate()+delta); return `${dt.getFullYear().toString().padStart(4,'0')}${(dt.getMonth()+1).toString().padStart(2,'0')}${dt.getDate().toString().padStart(2,'0')}`; }
+
+  // Format date from YYYYMMDD to DD/MM
+  function formatDateDDMM(dateStr) {
+    if(dateStr.length !== 8) return dateStr;
+    const month = dateStr.slice(4,6);
+    const day = dateStr.slice(6,8);
+    return `${day}/${month}`;
+  }
+
+  // Get day of week from YYYYMMDD
+  function getDayOfWeek(dateStr) {
+    if(dateStr.length !== 8) return '';
+    const year = parseInt(dateStr.slice(0,4));
+    const month = parseInt(dateStr.slice(4,6)) - 1; // JS months are 0-based
+    const day = parseInt(dateStr.slice(6,8));
+    const date = new Date(year, month, day);
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    return days[date.getDay()];
+  }
+
+  // Create radar availability URL
+  function createRadarAvailabilityUrl(dateStr, station) {
+    // Convert YYYYMMDD to YYYY-MM-DD
+    if(dateStr.length === 8) {
+      const year = dateStr.slice(0,4);
+      const month = dateStr.slice(4,6);
+      const day = dateStr.slice(6,8);
+      const formattedDate = `${year}-${month}-${day}`;
+
+      // Hardcoded config to match availability page default
+      return `http://radsats36:9000/radsat_availability.html?config=${DEFAULT_CONFIG}&station=${station}&date=${formattedDate}`;
+    }
+    return 'http://radsats36:9000/radsat_availability.html';
+  }
+
+  // Create satellite availability URL
+  function createSatelliteAvailabilityUrl(dateStr) {
+    // Convert YYYYMMDD to YYYY-MM-DD
+    if(dateStr.length === 8) {
+      const year = dateStr.slice(0,4);
+      const month = dateStr.slice(4,6);
+      const day = dateStr.slice(6,8);
+      const formattedDate = `${year}-${month}-${day}`;
+
+      // Hardcoded config to match availability page default
+      return `http://radsats36:9000/radsat_availability.html?config=${DEFAULT_CONFIG}&station=${HIMAWARI_FULL_NAME}&date=${formattedDate}`;
+    }
+    return 'http://radsats36:9000/radsat_availability.html';
+  }
+
+  // Format datetime from "YYYYMMDD HH:MM" to "DD/MM HH:MM (Day)" with date link
+  function formatDatetimeCompact(datetimeStr, station = '', isSatellite = false) {
+    const parts = datetimeStr.split(' ');
+    if(parts.length === 2) {
+      const dateStr = parts[0];
+      const timeStr = parts[1];
+      const dayOfWeek = getDayOfWeek(dateStr);
+      const formattedDate = formatDateDDMM(dateStr);
+      
+      if(station && !isSatellite) {
+        const url = createRadarAvailabilityUrl(dateStr, station);
+        return `<a href="${url}" target="_blank" class="date-link">${formattedDate}</a> ${timeStr} <span style="color:#6b7280;font-size:0.8em;">(${dayOfWeek})</span>`;
+      } else if(isSatellite) {
+        const url = createSatelliteAvailabilityUrl(dateStr);
+        return `<a href="${url}" target="_blank" class="date-link">${formattedDate}</a> ${timeStr} <span style="color:#6b7280;font-size:0.8em;">(${dayOfWeek})</span>`;
+      } else {
+        return `${formattedDate} ${timeStr} <span style="color:#6b7280;font-size:0.8em;">(${dayOfWeek})</span>`;
+      }
+    }
+    return datetimeStr;
+  }
+
+  // Create maintenance.html URL with parameters
+  function createMaintenanceUrl(periodText, station, year) {
+    // Strip HTML tags first
+    const cleanText = periodText.replace(/<[^>]*>/g, '');
+
+    // Extract date and time information from period text
+    // Period format: "DD/MM HH:MM (Day) - DD/MM HH:MM (Day) X data"
+    const regex = /(\d{2}\/\d{2}) (\d{2}:\d{2}).*?- (\d{2}\/\d{2}) (\d{2}:\d{2})/;
+    const match = cleanText.match(regex);
+
+    if (!match) {
+      console.log('No match found for period text:', cleanText);
+      return 'http://radsats36:9000/maintenance.html';
+    }
+
+    const [, startDateDDMM, startTime, endDateDDMM, endTime] = match;
+
+    // Convert DD/MM to YYYY-MM-DD using the selected year (not current year)
+    const selectedYear = year || yearSel.value || new Date().getFullYear();
+    const startDate = `${selectedYear}-${startDateDDMM.split('/').reverse().join('-')}`;
+    const endDate = `${selectedYear}-${endDateDDMM.split('/').reverse().join('-')}`;
+    
+    // Create URL with parameters
+    const params = new URLSearchParams({
+      tab: 'add',
+      station: station,
+      type: 'Preventive Maintenance',
+      startDate: `${startDate}T${startTime}`,
+      endDate: `${endDate}T${endTime}`,
+      user: '',
+      remarks: `Preventive maintenance for ${station}`
+    });
+    
+    return `http://radsats36:9000/maintenance.html?${params.toString()}`;
+  }
+
+  // Special formatting function for satellite missing periods that bridges specific patterns
+  function formatSatelliteMissingPeriods(missing_by_date) {
+    if (!missing_by_date) return [];
+    
+    const dates = Object.keys(missing_by_date).sort();
+    const periods = [];
+    
+    // Convert missing slots to standardized periods array
+    const standardPeriods = [];
+    for (const date_str of dates) {
+      const missing_slots = (missing_by_date[date_str] || []).slice().sort((a,b)=>a-b);
+      if (missing_slots.length === 0) continue;
+      
+      // Group consecutive slots within the same day
+      const groups = []; 
+      let current = [missing_slots[0]];
+      for (let i = 1; i < missing_slots.length; i++) {
+        if (missing_slots[i] === missing_slots[i-1] + 1) {
+          current.push(missing_slots[i]);
+        } else { 
+          groups.push(current); 
+          current = [missing_slots[i]]; 
+        }
+      }
+      groups.push(current);
+      
+      // Convert each group to a period object
+      for (const group of groups) {
+        const start_slot = group[0];
+        const end_slot = group[group.length - 1];
+        const start_time = satelliteSlotToDatetime(date_str, start_slot);
+        const end_time = satelliteSlotToEndDatetime(date_str, end_slot);
+        const dataCount = group.length;
+        
+        standardPeriods.push({
+          startDate: date_str,
+          endDate: date_str,
+          startTime: start_time,
+          endTime: end_time,
+          startSlot: start_slot,
+          endSlot: end_slot,
+          dataCount: dataCount
+        });
+      }
+    }
+    
+    // Now look for bridging opportunities
+    const finalPeriods = [];
+    let i = 0;
+    while (i < standardPeriods.length) {
+      const currentPeriod = standardPeriods[i];
+      let merged = false;
+      
+      // Check if current period can be bridged with the next period
+      if (i < standardPeriods.length - 1) {
+        const nextPeriod = standardPeriods[i + 1];
+        const nextDate = addDays(currentPeriod.endDate, 1);
+        
+        // Check for bridging pattern:
+        // Current period ends at 23:59 (slot 143) AND next period starts at 00:00 and goes to 02:49
+        if (nextPeriod.startDate === nextDate &&
+            currentPeriod.endSlot === 143 && // 23:50-23:59 slot
+            nextPeriod.startSlot === 0 &&    // 00:00-00:09 slot  
+            nextPeriod.endSlot <= 16) {      // up to 02:49 slot (02:40-02:49)
+          
+          // Bridge these periods
+          const bridgedPeriod = {
+            startDate: currentPeriod.startDate,
+            endDate: nextPeriod.endDate,
+            startTime: currentPeriod.startTime,
+            endTime: nextPeriod.endTime,
+            dataCount: currentPeriod.dataCount + nextPeriod.dataCount
+          };
+          finalPeriods.push(bridgedPeriod);
+          merged = true;
+          i += 2; // Skip both periods
+        }
+      }
+      
+      if (!merged) {
+        finalPeriods.push(currentPeriod);
+        i++;
+      }
+    }
+    
+    // Format the final periods
+    for (const period of finalPeriods) {
+      const start_time = formatDatetimeCompact(period.startTime, '', true);
+      const end_time = formatDatetimeCompact(period.endTime, '', true);
+      
+      periods.push(`${start_time} - ${end_time} <span style="color:#dc2626;font-size:0.85em;">${period.dataCount} data</span>`);
+    }
+    
+    return periods;
+  }
+
+  function formatMissingPeriodsNew(missing_by_date, station = '', isRadar = true){
+    if(!missing_by_date) return [];
+    const dates = Object.keys(missing_by_date).sort();
+    const periods = [];
+    
+    // For satellite data, use a different approach that respects excluded slot boundaries
+    if (!isRadar) {
+      return formatSatelliteMissingPeriods(missing_by_date);
+    }
+    
+    const complete_day_groups = [];
+    const partial_days = {};
+    const slotsPerDay = SLOTS_PER_DAY;
+    const maxSlot = slotsPerDay - 1;
+    
+    // Separate complete days from partial days
+    for(const date_str of dates){
+      const missing_slots = (missing_by_date[date_str] || []).slice().sort((a,b)=>a-b);
+      if(missing_slots.length === slotsPerDay){
+        if(complete_day_groups.length && addDays(complete_day_groups[complete_day_groups.length-1].slice(-1)[0],1) === date_str){
+          complete_day_groups[complete_day_groups.length-1].push(date_str);
+        } else {
+          complete_day_groups.push([date_str]);
+        }
+      } else {
+        partial_days[date_str] = missing_slots.slice();
+      }
+    }
+    
+    // Check for partial days that can be merged with complete day groups
+    const pdates = Object.keys(partial_days).sort();
+    const processed_partial_dates = new Set();
+    
+    for(let i = 0; i < pdates.length; i++){
+      const date_str = pdates[i];
+      if(processed_partial_dates.has(date_str)) continue;
+      
+      const missing_slots = partial_days[date_str];
+      if(!missing_slots || missing_slots.length === 0) continue;
+      
+      // Check if the next day is completely missing
+      const nextDate = addDays(date_str, 1);
+      let extendedGroup = null;
+      
+      // Find if nextDate starts a complete day group
+      for(const group of complete_day_groups) {
+        if(group[0] === nextDate) {
+          extendedGroup = group;
+          break;
+        }
+      }
+      
+      if(extendedGroup) {
+        // Group the missing slots into continuous periods
+        const groups = []; 
+        let current = [missing_slots[0]];
+        for(let j=1; j<missing_slots.length; j++){
+          if(missing_slots[j] === missing_slots[j-1] + 1) {
+            current.push(missing_slots[j]);
+          } else { 
+            groups.push(current); 
+            current = [missing_slots[j]]; 
+          }
+        }
+        groups.push(current);
+        
+        // Check if any group extends to the end of the day OR if we have multiple groups that together extend to the end
+        const lastMissingSlot = Math.max(...missing_slots);
+        const hasGroupsExtendingToEnd = lastMissingSlot === maxSlot;
+        
+        if(hasGroupsExtendingToEnd) {
+          // We can merge this partial day with the complete day group
+          processed_partial_dates.add(date_str);
+          
+          // Find groups that don't connect to the end vs those that do
+          let extendingGroups = [];
+          let nonExtendingGroups = [];
+          let foundConnection = false;
+          
+          // Work backwards from the end to find all connected groups
+          const connectedSlots = new Set();
+          for(let slot = maxSlot; slot >= 0; slot--) {
+            if(missing_slots.includes(slot)) {
+              connectedSlots.add(slot);
+              foundConnection = true;
+            } else if(foundConnection) {
+              break; // Stop at the first gap when working backwards
+            }
+          }
+          
+          // Classify groups based on whether they connect to the end
+          for(const g of groups) {
+            const hasConnectionToEnd = g.some(slot => connectedSlots.has(slot));
+            if(hasConnectionToEnd) {
+              extendingGroups.push(g);
+            } else {
+              nonExtendingGroups.push(g);
+            }
+          }
+          
+          // Process non-extending groups as normal
+          for(const g of nonExtendingGroups) {
+            const start_slot = g[0], end_slot = g[g.length-1];
+            let start_time, end_time;
+            if(isRadar) {
+              start_time = formatDatetimeCompact(slotToDatetime(date_str,start_slot), station);
+              end_time = formatDatetimeCompact(slotToEndDatetime(date_str,end_slot), station);
+            } else {
+              start_time = formatDatetimeCompact(satelliteSlotToDatetime(date_str,start_slot), '', true);
+              end_time = formatDatetimeCompact(satelliteSlotToEndDatetime(date_str,end_slot), '', true);
+            }
+            const dataCount = g.length;
+            periods.push(`${start_time} - ${end_time} <span style="color:#dc2626;font-size:0.85em;">${dataCount} data</span>`);
+          }
+          
+          // Create merged period for all extending groups + complete days
+          if(extendingGroups.length > 0) {
+            // Find the earliest slot among extending groups
+            const earliestSlot = Math.min(...extendingGroups.flat());
+            const totalExtendingSlots = extendingGroups.reduce((sum, g) => sum + g.length, 0);
+            
+            let start_time;
+            if(isRadar) {
+              start_time = formatDatetimeCompact(slotToDatetime(date_str, earliestSlot), station);
+            } else {
+              start_time = formatDatetimeCompact(satelliteSlotToDatetime(date_str, earliestSlot), '', true);
+            }
+            
+            const endDate = extendedGroup[extendedGroup.length-1];
+            const endDayOfWeek = getDayOfWeek(endDate);
+            const endFormattedDate = formatDateDDMM(endDate);
+            
+            const totalSlots = totalExtendingSlots + extendedGroup.length * slotsPerDay;
+            
+            if(station && isRadar) {
+              const endUrl = createRadarAvailabilityUrl(endDate, station);
+              periods.push(`${start_time} - <a href="${endUrl}" target="_blank" class="date-link">${endFormattedDate}</a> 23:59 <span style="color:#6b7280;font-size:0.8em;">(${endDayOfWeek})</span> <span style="color:#dc2626;font-size:0.85em;">${totalSlots} data</span>`);
+            } else if(!station && !isRadar) {
+              const endUrl = createSatelliteAvailabilityUrl(endDate);
+              periods.push(`${start_time} - <a href="${endUrl}" target="_blank" class="date-link">${endFormattedDate}</a> 23:59 <span style="color:#6b7280;font-size:0.8em;">(${endDayOfWeek})</span> <span style="color:#dc2626;font-size:0.85em;">${totalSlots} data</span>`);
+            } else {
+              periods.push(`${start_time} - ${endFormattedDate} 23:59 <span style="color:#6b7280;font-size:0.8em;">(${endDayOfWeek})</span> <span style="color:#dc2626;font-size:0.85em;">${totalSlots} data</span>`);
+            }
+            
+            // Remove this group from complete_day_groups so it's not processed again
+            const groupIndex = complete_day_groups.indexOf(extendedGroup);
+            if(groupIndex !== -1) {
+              complete_day_groups.splice(groupIndex, 1);
+            }
+          }
+        }
+      }
+    }
+    
+    // Process remaining complete day groups
+    for(const group of complete_day_groups){
+      if(group.length === 1) {
+        const dayOfWeek = getDayOfWeek(group[0]);
+        const formattedDate = formatDateDDMM(group[0]);
+        if(station && isRadar) {
+          const url = createRadarAvailabilityUrl(group[0], station);
+          periods.push(`<a href="${url}" target="_blank" class="date-link">${formattedDate}</a> 00:00 <span style="color:#6b7280;font-size:0.8em;">(${dayOfWeek})</span> - ${formattedDate} 23:59 <span style="color:#6b7280;font-size:0.8em;">(${dayOfWeek})</span> <span style="color:#dc2626;font-size:0.85em;">${slotsPerDay} data</span>`);
+        } else {
+          periods.push(`${formattedDate} 00:00 <span style="color:#6b7280;font-size:0.8em;">(${dayOfWeek})</span> - ${formattedDate} 23:59 <span style="color:#6b7280;font-size:0.8em;">(${dayOfWeek})</span> <span style="color:#dc2626;font-size:0.85em;">${slotsPerDay} data</span>`);
+        }
+      } else {
+        const startDayOfWeek = getDayOfWeek(group[0]);
+        const endDayOfWeek = getDayOfWeek(group[group.length-1]);
+        const totalSlots = group.length * slotsPerDay;
+        const startFormattedDate = formatDateDDMM(group[0]);
+        const endFormattedDate = formatDateDDMM(group[group.length-1]);
+        if(station && isRadar) {
+          const startUrl = createRadarAvailabilityUrl(group[0], station);
+          const endUrl = createRadarAvailabilityUrl(group[group.length-1], station);
+          periods.push(`<a href="${startUrl}" target="_blank" class="date-link">${startFormattedDate}</a> 00:00 <span style="color:#6b7280;font-size:0.8em;">(${startDayOfWeek})</span> - <a href="${endUrl}" target="_blank" class="date-link">${endFormattedDate}</a> 23:59 <span style="color:#6b7280;font-size:0.8em;">(${endDayOfWeek})</span> <span style="color:#dc2626;font-size:0.85em;">${totalSlots} data</span>`);
+        } else if(!station && !isRadar) {
+          // Satellite - add satellite links for date ranges
+          const startUrl = createSatelliteAvailabilityUrl(group[0]);
+          const endUrl = createSatelliteAvailabilityUrl(group[group.length-1]);
+          periods.push(`<a href="${startUrl}" target="_blank" class="date-link">${startFormattedDate}</a> 00:00 <span style="color:#6b7280;font-size:0.8em;">(${startDayOfWeek})</span> - <a href="${endUrl}" target="_blank" class="date-link">${endFormattedDate}</a> 23:59 <span style="color:#6b7280;font-size:0.8em;">(${endDayOfWeek})</span> <span style="color:#dc2626;font-size:0.85em;">${totalSlots} data</span>`);
+        } else {
+          periods.push(`${startFormattedDate} 00:00 <span style="color:#6b7280;font-size:0.8em;">(${startDayOfWeek})</span> - ${endFormattedDate} 23:59 <span style="color:#6b7280;font-size:0.8em;">(${endDayOfWeek})</span> <span style="color:#dc2626;font-size:0.85em;">${totalSlots} data</span>`);
+        }
+      }
+    }
+    
+    // Process remaining partial days
+    for(const date_str of pdates){
+      if(processed_partial_dates.has(date_str)) continue;
+      
+      const missing_slots = partial_days[date_str]; 
+      if(!missing_slots || missing_slots.length===0) continue;
+      
+      const groups=[]; 
+      let current=[missing_slots[0]];
+      for(let i=1;i<missing_slots.length;i++){
+        if(missing_slots[i] === missing_slots[i-1] + 1) current.push(missing_slots[i]); else { groups.push(current); current=[missing_slots[i]]; }
+      }
+      groups.push(current);
+      for(const g of groups){
+        const start_slot = g[0], end_slot = g[g.length-1];
+        let start_time, end_time;
+        if(isRadar) {
+          start_time = formatDatetimeCompact(slotToDatetime(date_str,start_slot), station);
+          end_time = formatDatetimeCompact(slotToEndDatetime(date_str,end_slot), station);
+        } else {
+          start_time = formatDatetimeCompact(satelliteSlotToDatetime(date_str,start_slot), '', true);
+          end_time = formatDatetimeCompact(satelliteSlotToEndDatetime(date_str,end_slot), '', true);
+        }
+        const dataCount = g.length;
+        periods.push(`${start_time} - ${end_time} <span style="color:#dc2626;font-size:0.85em;">${dataCount} data</span>`);
+      }
+    }
+    
+    // Extract dates for proper sorting
+    const periodsWithDates = periods.map(period => {
+      // Extract first date from the period string (remove HTML tags first)
+      const textOnly = period.replace(/<[^>]*>/g, ''); // Remove HTML tags
+      const dateMatch = textOnly.match(/(\d{2}\/\d{2})/); // Find first DD/MM pattern
+      if (dateMatch) {
+        const [day, month] = dateMatch[1].split('/');
+        // Use current year for sorting (assuming all periods are within same year)
+        const currentYear = new Date().getFullYear();
+        const sortKey = `${currentYear}${month.padStart(2, '0')}${day.padStart(2, '0')}`;
+        return { period, sortKey };
+      }
+      return { period, sortKey: '99999999' }; // Put malformed dates at end
+    });
+    
+    // Sort by date
+    periodsWithDates.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+    
+    // Return sorted periods
+    return periodsWithDates.map(item => item.period);
+  }
+
+  async function loadMaintenance(){
+    try{
+      const j = await fetchJson(MAINT_API).catch(()=>null);
+      if(!j){ return []; }
+      if(Array.isArray(j)) return j;
+      if(j.records && Array.isArray(j.records)) return j.records;
+      if(j.data && Array.isArray(j.data)) return j.data;
+      if(typeof j === 'object') return [j];
+    }catch(e){
+      console.error('Maintenance fetch error:', e);
+    }
+    return [];
+  }
+
+  async function loadStationsConfig() {
+    try {
+      const config = await fetchJson(STATIONS_CONFIG_API);
+      return config;
+    } catch(e) {
+      console.error('Stations config fetch error:', e);
+      return null;
+    }
+  }
+
+  async function loadSatelliteFileList(dataSource, dateStr) {
+    try {
+      const year = dateStr.slice(0,4);
+      const month = dateStr.slice(4,6);
+      const day = dateStr.slice(6,8);
+      const path = `/mnt/${dataSource}/${year}${month}${day}/file_list.txt`;
+      const url = `${FILE_LIST_API}?path=${encodeURIComponent(path)}`;
+      const text = await fetchText(url);
+      return text;
+    } catch(e) {
+      console.error('Satellite file list fetch error for', dateStr, ':', e);
+      return '';
+    }
+  }
+
+  function parseSatelliteFileList(fileListText) {
+    if (!fileListText) return [];
+    
+    const lines = fileListText.trim().split(/\s+/);
+    const timestamps = [];
+    
+    for (const line of lines) {
+      // Handle both old and new formats
+      let timestamp;
+      if (line.includes(':')) {
+        // New format: "202509150000:filename"
+        timestamp = line.split(':')[0];
+      } else if (line.includes('_')) {
+        // Old format: "202209150000_filename"
+        timestamp = line.split('_')[0];
+      } else {
+        continue;
+      }
+      
+      if (timestamp && timestamp.length === 12) { // YYYYMMDDHHMM
+        timestamps.push(timestamp);
+      }
+    }
+    
+    return timestamps;
+  }
+
+  function formatPercentDecimal(n){ return (Number(n*100)).toFixed(2) + '%'; }
+  function formatPercent(n){ return Number(n).toFixed(2) + '%'; }
+  
+  function formatMonthTitle(yyyymm) {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const year = yyyymm.slice(0, 4);
+    const month = parseInt(yyyymm.slice(4), 10) - 1;
+    return `${monthNames[month]} ${year}`;
+  }
+
+  // Helper function to get base name from full name for JSON file lookup
+  function getBaseNameForArchive(fullArchiveName) {
+    if (fullArchiveName === TMS_FULL_NAME) return TMS_BASE_NAME;
+    if (fullArchiveName === TCR_FULL_NAME) return TCR_BASE_NAME;
+    return fullArchiveName; // fallback
+  }
+
+  // Helper function to get display name from full name for UI
+  function getDisplayNameForArchive(fullArchiveName) {
+    if (fullArchiveName === TMS_FULL_NAME) return TMS_DISPLAY_NAME;
+    if (fullArchiveName === TCR_FULL_NAME) return TCR_DISPLAY_NAME;
+    return fullArchiveName; // fallback
+  }
+
+  async function computeForMonths(months){
+    updateStatus('Loading maintenance...');
+    const maintenance = await loadMaintenance();
+    updateStatus('Fetching daily JSONs...');
+    const per_archive_found_by_date = {}; const per_archive_maint_by_date = {}; const per_archive_preventive_by_date = {};
+    // Store original found slots before maintenance removal
+    const per_archive_original_found_by_date = {};
+    const per_archive_restoration_by_date = {};
+    const per_archive_full_restoration_by_date = {};
+
+    ARCHIVES.forEach(a=>{
+      per_archive_found_by_date[a]={}; 
+      per_archive_maint_by_date[a]={}; 
+      per_archive_preventive_by_date[a]={}; 
+      per_archive_original_found_by_date[a]={};
+      per_archive_restoration_by_date[a]={};
+      per_archive_full_restoration_by_date[a]={};
+    });
+
+    const allDates = []; months.forEach(m=> allDates.push(...monthDateRange(m)));
+
+    for(const d of allDates){
+      for(const arc of ARCHIVES){
+        try{
+          // Extract base archive name for file lookup
+          const baseArchiveName = getBaseNameForArchive(arc);
+          const url = `${BASE_DAILY}/${d}_${baseArchiveName}.json`;
+          const dj = await fetchJson(url).catch(()=>null);
+          if(dj){
+            const foundSlots = Array.isArray(dj.found_slots) ? dj.found_slots : (Array.isArray(dj.found_timestamps) ? tokensToSlots(dj.found_timestamps) : []);
+            const foundSet = new Set((foundSlots||[]).map(Number));
+            per_archive_found_by_date[arc][d] = new Set(foundSet);
+            per_archive_original_found_by_date[arc][d] = new Set(foundSet);
+          } else {
+            per_archive_found_by_date[arc][d] = new Set();
+            per_archive_original_found_by_date[arc][d] = new Set();
+          }
+        }catch{
+          per_archive_found_by_date[arc][d] = new Set();
+          per_archive_original_found_by_date[arc][d] = new Set();
+        }
+      }
+    }
+
+    for(const arc of ARCHIVES){
+      for(const d of allDates){
+        const ms = getMaintenanceSlotsForArchiveOnDate(arc,d,maintenance);
+        if(ms.size) per_archive_maint_by_date[arc][d] = ms;
+        const ps = getPreventiveSlotsForArchiveOnDate(arc,d,maintenance);
+        if(ps.size) per_archive_preventive_by_date[arc][d] = ps;
+        const rs = getDataRestorationSlotsForArchiveOnDate(arc,d,maintenance);
+        if(rs.size) per_archive_restoration_by_date[arc][d] = rs;
+      }
+    }
+
+    // Remove maintenance slots from found slots for individual archive calculations
+    for(const arc of ARCHIVES){
+      for(const d of allDates){
+        const found = per_archive_found_by_date[arc][d] || new Set();
+        const maint = per_archive_maint_by_date[arc][d] || new Set();
+        for(const s of Array.from(maint)) if(found.has(s)) found.delete(s);
+        per_archive_found_by_date[arc][d] = found;
+      }
+    }
+
+    // NEW: Add back Data Restoration slots (overrides all maintenance types)
+    for(const arc of ARCHIVES){
+      for(const d of allDates){
+        const restoration = per_archive_restoration_by_date[arc][d] || new Set();
+        if(restoration.size > 0){
+          const found = per_archive_found_by_date[arc][d] || new Set();
+          const originalFound = per_archive_original_found_by_date[arc][d] || new Set();
+          const effectiveRestoration = new Set();
+          for(const s of restoration){
+            if(!originalFound.has(s)){
+              effectiveRestoration.add(s);
+              originalFound.add(s);
+            }
+            // Always add to found (restore slots removed by maintenance even if original data existed)
+            found.add(s);
+          }
+          per_archive_full_restoration_by_date[arc][d] = new Set(restoration);
+          per_archive_restoration_by_date[arc][d] = effectiveRestoration;
+          per_archive_found_by_date[arc][d] = found;
+          per_archive_original_found_by_date[arc][d] = originalFound;
+        }
+      }
+    }
+
+    const monthsResults = [];
+    for(const yyyymm of months){
+      const dates = monthDateRange(yyyymm);
+      const monthTotalExpected = dates.length * SLOTS_PER_DAY;
+      const monthObj = { month: yyyymm, stats: {}, combined: {} };
+
+      for(const arc of ARCHIVES){
+        let totalFound = 0; const maintPairs = new Set();
+        const missing_by_date = {}; const effective_missing_by_date = {};
+        let totalPreventiveSlots = 0;
+        let totalRestorationSlots = 0;
+        for(const d of dates){
+          const found = per_archive_found_by_date[arc][d] || new Set();
+          totalFound += found.size;
+          const maint = per_archive_maint_by_date[arc][d] || new Set();
+          const fullRestorationForMaint = per_archive_full_restoration_by_date[arc][d] || new Set();
+          for(const s of maint) {
+            if(!fullRestorationForMaint.has(s)) maintPairs.add(`${d}#${s}`);
+          }
+          const missing = [];
+          for(let s=0;s<SLOTS_PER_DAY;s++) if(!found.has(s)) missing.push(s);
+          if(missing.length) missing_by_date[d] = missing;
+          const preventive = per_archive_preventive_by_date[arc][d] || new Set();
+          const fullRestoration = per_archive_full_restoration_by_date[arc][d] || new Set();
+          let adjustedPreventiveForDay = 0;
+          for(const s of preventive) {
+            if(!fullRestoration.has(s)) adjustedPreventiveForDay++;
+          }
+          totalPreventiveSlots += adjustedPreventiveForDay;
+          const restoration = per_archive_restoration_by_date[arc][d] || new Set();
+          totalRestorationSlots += restoration.size;
+          // Remove ALL maintenance (not just preventive) for the second section
+          const allMaint = per_archive_maint_by_date[arc][d] || new Set();
+          const eff = missing.filter(s => !allMaint.has(s));
+          if(eff.length) effective_missing_by_date[d] = eff;
+        }
+
+        const totalMaintenance = maintPairs.size;
+        const totalEffectiveMissing = Object.values(effective_missing_by_date).reduce((a,b)=>a+b.length,0);
+        const availability = monthTotalExpected > 0 ? (totalFound / monthTotalExpected) : 0;
+
+        const total_expected_minus_preventive = Math.max(0, monthTotalExpected - totalPreventiveSlots);
+        let missing_minus_preventive = 0;
+        for(const d of dates){
+          const missing = missing_by_date[d] || [];
+          const preventive = per_archive_preventive_by_date[arc][d] || new Set();
+          let removed = 0;
+          for(const s of missing){ if(preventive.has(s)) removed++; }
+          missing_minus_preventive += Math.max(0, missing.length - removed);
+        }
+        const overall_avail_minus_preventive = total_expected_minus_preventive > 0 ? (totalFound / total_expected_minus_preventive * 100) : "N/A";
+
+        monthObj.stats[arc] = {
+          total_expected: monthTotalExpected,
+          total_found: totalFound,
+          total_maintenance: totalMaintenance,
+          total_preventive_slots: totalPreventiveSlots,
+          total_restoration_slots: totalRestorationSlots,
+          total_effective_missing: totalEffectiveMissing,
+          availability: availability,
+          missing_by_date: missing_by_date,
+          effective_missing_by_date: effective_missing_by_date,
+          preventive_adjustment: {
+            total_expected_minus_preventive: total_expected_minus_preventive,
+            total_missing_minus_preventive: missing_minus_preventive,
+            overall_avail_minus_preventive: overall_avail_minus_preventive
+          }
+        };
+      }
+
+      // OR/AND calculation
+      const combinedMissingOr = {}; const combinedMissingAnd = {};
+      let foundUnion = 0, foundInter = 0;
+      for(const d of dates){
+        // Use original found slots (before maintenance removal)
+        const foundA = per_archive_original_found_by_date[TMS_FULL_NAME][d] || new Set();
+        const foundB = per_archive_original_found_by_date[TCR_FULL_NAME][d] || new Set();
+        
+        // Get maintenance slots for both archives
+        const maintA = per_archive_maint_by_date[TMS_FULL_NAME][d] || new Set();
+        const maintB = per_archive_maint_by_date[TCR_FULL_NAME][d] || new Set();
+        //const restA = per_archive_restoration_by_date[TMS_FULL_NAME][d] || new Set();
+        //const restB = per_archive_restoration_by_date[TCR_FULL_NAME][d] || new Set();
+        const restA = per_archive_full_restoration_by_date[TMS_FULL_NAME][d] || new Set();
+        const restB = per_archive_full_restoration_by_date[TCR_FULL_NAME][d] || new Set();
+        const missOr = [], missAnd = [];
+        let unionCount = 0, interCount = 0;
+        
+        for(let s=0; s<SLOTS_PER_DAY; s++){
+          // For OR: available if at least one archive has data (not in maintenance)
+          const aAvailable = (foundA.has(s) && !maintA.has(s)) || restA.has(s);
+          const bAvailable = (foundB.has(s) && !maintB.has(s)) || restB.has(s);
+          const orAvailable = aAvailable || bAvailable;
+          
+          // For AND: available if both archives have data (not in maintenance)  
+          const andAvailable = aAvailable && bAvailable;
+          
+          if(orAvailable) unionCount++;
+          if(andAvailable) interCount++;
+          
+          if(!orAvailable) missOr.push(s);
+          if(!andAvailable) missAnd.push(s);
+        }
+        
+        foundUnion += unionCount;
+        foundInter += interCount;
+        
+        if(missOr.length) combinedMissingOr[d] = missOr;
+        if(missAnd.length) combinedMissingAnd[d] = missAnd;
+      }
+      const monthTotalExpectedCombined = dates.length * SLOTS_PER_DAY;
+      monthObj.combined = {
+        total_expected: monthTotalExpectedCombined,
+        total_found_or: foundUnion,
+        total_found_and: foundInter,
+        missing_by_date_or: combinedMissingOr,
+        missing_by_date_and: combinedMissingAnd
+      };
+
+      monthsResults.push(monthObj);
+    }
+
+    return monthsResults;
+  }
+
+  async function computeSatelliteForMonths(months) {
+    updateStatus('Loading satellite configuration...');
+    const stationsConfig = await loadStationsConfig();
+    if (!stationsConfig || !stationsConfig[HIMAWARI_FULL_NAME]) {
+      throw new Error(`Station config not found for ${HIMAWARI_FULL_NAME}`);
+    }
+    
+    const dataSource = stationsConfig[HIMAWARI_FULL_NAME].data_source;
+    if (!dataSource) {
+      throw new Error(`Data source not found for ${HIMAWARI_FULL_NAME}`);
+    }
+    
+    updateStatus('Loading maintenance data...');
+    const maintenance = await loadMaintenance();
+    
+    updateStatus('Fetching satellite data...');
+    const allDates = [];
+    months.forEach(m => allDates.push(...monthDateRange(m)));
+    
+    const satelliteResults = [];
+    
+    for (const yyyymm of months) {
+      const dates = monthDateRange(yyyymm);
+      const monthTotalExpected = dates.length * SATELLITE_EXPECTED_SLOTS_PER_DAY;
+      let totalFound = 0;
+      let totalPreventiveSlots = 0;
+      let totalRestorationSlots = 0;
+      let totalMaintenanceSlots = 0;
+      const missing_by_date = {};
+      const effective_missing_by_date = {};
+
+      for (const d of dates) {
+        // Load satellite file list for this date
+        const fileListText = await loadSatelliteFileList(dataSource, d);
+        const timestamps = parseSatelliteFileList(fileListText);
+        const foundSlots = tokensToSatelliteSlots(timestamps);
+        
+        // Get maintenance and preventive maintenance slots (in UTC)
+        const maintSlots = getSatelliteMaintenanceSlotsForDate(d, maintenance);
+        
+        // Remove excluded slots (02:50 and 14:50 UTC) and maintenance slots
+        const validFoundSlots = foundSlots.filter(slot => !EXCLUDED_UTC_SLOTS.includes(slot) && !maintSlots.has(slot));
+
+        // NEW: Get Data Restoration slots and add them back (overrides maintenance)
+        const restorationSlots = getSatelliteDataRestorationSlotsForDate(d, maintenance);
+        const validFoundSet = new Set(validFoundSlots);
+        const originalFoundSet = new Set(foundSlots.filter(slot => !EXCLUDED_UTC_SLOTS.includes(slot)));
+        for(const s of restorationSlots){
+          validFoundSet.add(s);
+        }
+        // Only count restoration slots that didn't already have data
+        for(const s of restorationSlots){
+          if(!originalFoundSet.has(s)){
+            totalRestorationSlots++;
+          }
+        }
+
+        // Count effective maintenance slots (excluding restoration-overridden and excluded UTC slots)
+        for (const s of maintSlots) {
+          if (!EXCLUDED_UTC_SLOTS.includes(s) && !restorationSlots.has(s)) {
+            totalMaintenanceSlots++;
+          }
+        }
+
+        totalFound += validFoundSet.size;
+        const preventiveSlots = getSatellitePreventiveSlotsForDate(d, maintenance);
+        // Subtract preventive slots that overlap with data restoration
+        const restorationSlotsForPreventive = getSatelliteDataRestorationSlotsForDate(d, maintenance);
+        let adjustedPreventiveForDay = 0;
+        for(const slot of preventiveSlots) {
+          if(!restorationSlotsForPreventive.has(slot)) adjustedPreventiveForDay++;
+        }
+        totalPreventiveSlots += adjustedPreventiveForDay;
+
+        // Calculate missing slots using restored found set
+        const missing = [];
+        for (let s = 0; s < SATELLITE_SLOTS_PER_DAY; s++) {
+          if (!EXCLUDED_UTC_SLOTS.includes(s) && !validFoundSet.has(s)) {
+            missing.push(s);
+          }
+        }
+        if (missing.length) missing_by_date[d] = missing;
+        
+        // Calculate effective missing (excluding all maintenance)
+        const effectiveMissing = missing.filter(s => !maintSlots.has(s));
+        if (effectiveMissing.length) effective_missing_by_date[d] = effectiveMissing;
+      }
+
+      const availability = monthTotalExpected > 0 ? (totalFound / monthTotalExpected) : 0;
+      
+      // Preventive maintenance adjustment - exclude slots that are already excluded (02:50 and 14:50 UTC)
+      let adjustedPreventiveSlots = 0;
+      for (const d of dates) {
+        const preventive = getSatellitePreventiveSlotsForDate(d, maintenance);
+        const restorationForAdj = getSatelliteDataRestorationSlotsForDate(d, maintenance);
+        for (const slot of preventive) {
+          // Only count preventive slots that are not already excluded AND not overridden by restoration
+          if (!EXCLUDED_UTC_SLOTS.includes(slot) && !restorationForAdj.has(slot)) {
+            adjustedPreventiveSlots++;
+          }
+        }
+      }
+      const total_expected_minus_preventive = Math.max(0, monthTotalExpected - adjustedPreventiveSlots);
+      let missing_minus_preventive = 0;
+      for (const d of dates) {
+        const missing = missing_by_date[d] || [];
+        const preventive = getSatellitePreventiveSlotsForDate(d, maintenance);
+        let removed = 0;
+        for (const s of missing) {
+          if (preventive.has(s)) removed++;
+        }
+        missing_minus_preventive += Math.max(0, missing.length - removed);
+      }
+      const overall_avail_minus_preventive = total_expected_minus_preventive > 0 ? 
+        (totalFound / total_expected_minus_preventive * 100) : "N/A";
+      
+      satelliteResults.push({
+        month: yyyymm,
+        total_expected: monthTotalExpected,
+        total_found: totalFound,
+        total_maintenance_slots: totalMaintenanceSlots,
+        total_preventive_slots: adjustedPreventiveSlots,
+        total_restoration_slots: totalRestorationSlots,
+        availability: availability,
+        missing_by_date: missing_by_date,
+        effective_missing_by_date: effective_missing_by_date,
+        preventive_adjustment: {
+          total_expected_minus_preventive: total_expected_minus_preventive,
+          total_missing_minus_preventive: missing_minus_preventive,
+          overall_avail_minus_preventive: overall_avail_minus_preventive
+        }
+      });
+    }
+
+    return satelliteResults;
+  }
+
+  function renderMonths(monthsResults){
+    monthsContainer.innerHTML = '';
+    for(const month of monthsResults){
+      const card = document.createElement('div'); card.className='card';
+      const title = document.createElement('h4');
+      title.innerHTML = formatMonthTitle(month.month);
+      title.style.marginTop='0';
+      title.style.color='#2979ff';
+      title.style.fontWeight='600';
+      card.appendChild(title);
+
+      const grid = document.createElement('div'); grid.className='grid4';
+
+      // Use variables for station iteration
+      ARCHIVES.forEach(arc=>{
+        const s = month.stats[arc];
+        const blk = document.createElement('div'); blk.className='block';
+        const primary = document.createElement('div'); primary.className='primary-line';
+        // Display simplified name in UI using helper function
+        const displayName = getDisplayNameForArchive(arc);
+        const restorationBadge = s.total_restoration_slots > 0
+          ? ` <span style="color:#2a5fb0; font-size:0.85em;">(${s.total_restoration_slots} restored)</span>`
+          : '';
+        primary.innerHTML = `${displayName}: <span style="color:#f97316; font-weight:700;">${s.total_found}</span> / ${s.total_expected}, Avail ${formatPercentDecimal(s.availability)}${restorationBadge}`;
+        blk.appendChild(primary);
+
+        const preventiveLine = document.createElement('div'); preventiveLine.className='adj-muted';
+        if(s.total_preventive_slots && s.total_preventive_slots > 0){
+          const availDisplay = s.preventive_adjustment.overall_avail_minus_preventive === "N/A" ? 
+            "N/A" : 
+            formatPercent(s.preventive_adjustment.overall_avail_minus_preventive);
+          preventiveLine.innerHTML = `Excluded preventive: ${s.total_found} / <span style="color:#f97316; font-weight:700;">${s.preventive_adjustment.total_expected_minus_preventive}</span>, Avail <span style="font-weight:700; color:#22c55e;">${availDisplay}</span>`;
+        } else {
+          preventiveLine.textContent = 'No preventive maintenance';
+        }
+        blk.appendChild(preventiveLine);
+
+        const det = document.createElement('details'); det.className='collapsible';
+        const sum = document.createElement('summary'); sum.textContent = 'Details'; det.appendChild(sum);
+        const inner = document.createElement('div'); inner.className='details-inner';
+
+        const periods = formatMissingPeriodsNew(s.missing_by_date || {}, arc, true);
+        const periodsCount = periods.length;
+        
+        if(periodsCount){
+          // All periods section
+          const allHeader = document.createElement('div'); allHeader.className='section-header';
+          allHeader.style.marginTop = '12px';
+          const allTitle = document.createElement('span'); allTitle.className='section-title';
+          allTitle.textContent = `All missing periods (${periodsCount} periods)`;
+          allHeader.appendChild(allTitle);
+          inner.appendChild(allHeader);
+          const pre = document.createElement('pre');
+          pre.className='mono'; 
+          pre.style.marginTop='2px';
+          pre.innerHTML = periods.map(p=>`${p}`).join('\n');
+          inner.appendChild(pre);
+        } else {
+          const nm = document.createElement('div'); nm.className='muted-sm'; nm.style.marginTop='6px';
+          nm.textContent = 'No missing periods';
+          inner.appendChild(nm);
+        }
+
+        // Always show "Excluding maintenance" section
+        const effPeriods = formatMissingPeriodsNew(s.effective_missing_by_date || {}, arc, true);
+        const h2Header = document.createElement('div');
+        h2Header.className='section-header';
+        h2Header.style.marginTop='12px';
+        const h2Title = document.createElement('span');
+        h2Title.className='section-title';
+        h2Title.textContent = `Excluding maintenance (${effPeriods.length} periods)`;
+        h2Header.appendChild(h2Title);
+        inner.appendChild(h2Header);
+        
+        if(effPeriods.length > 0) {
+          const pre2 = document.createElement('div');
+          pre2.style.marginTop='2px';
+          pre2.style.fontFamily='ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace';
+          pre2.style.fontSize='0.86rem';
+          pre2.style.color='#374151';
+          pre2.style.lineHeight='1.2';
+          
+          effPeriods.forEach(period => {
+            const periodContainer = document.createElement('div');
+            periodContainer.style.display = 'flex';
+            periodContainer.style.justifyContent = 'space-between';
+            periodContainer.style.alignItems = 'center';
+            periodContainer.style.marginBottom = '1px';
+            periodContainer.style.padding = '1px 0';
+            
+            const periodText = document.createElement('span');
+            periodText.innerHTML = period;
+            periodText.style.flex = '1';
+            
+            const addButton = document.createElement('button');
+            addButton.textContent = 'Add';
+            addButton.style.marginLeft = '12px';
+            addButton.style.padding = '2px 8px';
+            addButton.style.fontSize = '0.8em';
+            addButton.style.backgroundColor = '#2979ff';
+            addButton.style.color = 'white';
+            addButton.style.border = 'none';
+            addButton.style.borderRadius = '4px';
+            addButton.style.cursor = 'pointer';
+            addButton.style.flexShrink = '0';
+            
+            addButton.addEventListener('click', function() {
+              const maintenanceUrl = createMaintenanceUrl(period, arc, yearSel.value);
+              window.open(maintenanceUrl, '_blank');
+            });
+
+            addButton.addEventListener('mouseover', function() {
+              this.style.backgroundColor = '#1a68e6';
+            });
+            
+            addButton.addEventListener('mouseout', function() {
+              this.style.backgroundColor = '#2979ff';
+            });
+            
+            periodContainer.appendChild(periodText);
+            periodContainer.appendChild(addButton);
+            pre2.appendChild(periodContainer);
+          });
+          
+          inner.appendChild(pre2);
+        } else {
+          const nm2 = document.createElement('div'); nm2.className='muted-sm'; nm2.style.marginTop='2px';
+          if(s.total_maintenance > 0) {
+            nm2.textContent = 'No missing periods after excluding maintenance'; inner.appendChild(nm2);
+          } else {
+            // When no maintenance records exist, show same as "All missing periods"
+            const allPeriods = formatMissingPeriodsNew(s.missing_by_date || {}, arc, true);
+            if(allPeriods.length > 0) {
+              const pre2 = document.createElement('div');
+              pre2.style.marginTop='2px';
+              pre2.style.fontFamily='ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace';
+              pre2.style.fontSize='0.86rem';
+              pre2.style.color='#374151';
+              pre2.style.lineHeight='1.6';
+              
+              allPeriods.forEach(period => {
+                const periodContainer = document.createElement('div');
+                periodContainer.style.display = 'flex';
+                periodContainer.style.justifyContent = 'space-between';
+                periodContainer.style.alignItems = 'center';
+                periodContainer.style.marginBottom = '4px';
+                periodContainer.style.padding = '2px 0';
+                
+                const periodText = document.createElement('span');
+                periodText.innerHTML = period;
+                periodText.style.flex = '1';
+                
+                const addButton = document.createElement('button');
+                addButton.textContent = 'Add';
+                addButton.style.marginLeft = '12px';
+                addButton.style.padding = '2px 8px';
+                addButton.style.fontSize = '0.8em';
+                addButton.style.backgroundColor = '#2979ff';
+                addButton.style.color = 'white';
+                addButton.style.border = 'none';
+                addButton.style.borderRadius = '4px';
+                addButton.style.cursor = 'pointer';
+                addButton.style.flexShrink = '0';
+                
+                addButton.addEventListener('click', function() {
+                  const maintenanceUrl = createMaintenanceUrl(period, arc, yearSel.value);
+                  window.open(maintenanceUrl, '_blank');
+                });
+
+                addButton.addEventListener('mouseover', function() {
+                  this.style.backgroundColor = '#1a68e6';
+                });
+                
+                addButton.addEventListener('mouseout', function() {
+                  this.style.backgroundColor = '#2979ff';
+                });
+                
+                periodContainer.appendChild(periodText);
+                periodContainer.appendChild(addButton);
+                pre2.appendChild(periodContainer);
+              });
+              
+              inner.appendChild(pre2);
+            } else {
+              nm2.textContent = 'No missing periods';
+              inner.appendChild(nm2);
+            }
+          }
+        }
+
+        // Calculation Breakdown
+        const calcHeader = document.createElement('div'); 
+        calcHeader.className='section-header';
+        calcHeader.style.marginTop='26px';
+        const calcTitle = document.createElement('span');
+        calcTitle.className='section-title';
+        calcTitle.textContent = 'Calculation Breakdown';
+        calcTitle.style.color = '#6b7280';
+        calcHeader.appendChild(calcTitle);
+        inner.appendChild(calcHeader);
+        
+        const calcContainer = document.createElement('div');
+        calcContainer.style.marginTop = '2px';
+        calcContainer.style.fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace';
+        calcContainer.style.fontSize = '0.75rem'; // Smaller font size
+        calcContainer.style.color = '#374151';
+        calcContainer.style.lineHeight = '1.4';
+        calcContainer.style.background = '#f8fafc';
+        calcContainer.style.padding = '8px';
+        calcContainer.style.borderRadius = '4px';
+        calcContainer.style.border = '1px solid #e2e8f0';
+        
+        const dates = monthDateRange(month.month);
+        const numDays = dates.length;
+        
+        // Calculate effective missing slots (excluding maintenance)
+        const effectiveMissingSlots = Object.values(s.effective_missing_by_date || {}).reduce((sum, slots) => sum + slots.length, 0);
+        const preventiveSlots = s.total_preventive_slots || 0;
+        const nonPreventiveSlots = s.total_maintenance - preventiveSlots;
+        const restorationSlots = s.total_restoration_slots || 0;
+        const totalUnavailable = effectiveMissingSlots + nonPreventiveSlots + preventiveSlots;
+        const restorationLine = restorationSlots > 0
+          ? `<div style="margin-bottom: 4px; color: #2a5fb0;">Data Restoration: ${restorationSlots} slots confirmed available (counted as found, excluded from maintenance and missing counts above)</div>`
+          : '';
+        calcContainer.innerHTML = `
+          <div style="margin-bottom: 4px;">Total expected slots: ${numDays} days × 240 slots/day = ${s.total_expected}</div>
+          <div style="margin-bottom: 4px; color: #dc2626;">Missing data slots (exclude maintenance): ${effectiveMissingSlots}</div>
+          <div style="margin-bottom: 4px; color: #dc2626;">Non-preventive maintenance slots: ${nonPreventiveSlots}</div>
+          <div style="margin-bottom: 4px; color: #dc2626;">Preventive maintenance slots: ${preventiveSlots}</div>
+          ${restorationLine}
+          <div style="margin-bottom: 4px;">Found data slots: ${s.total_expected} - ${effectiveMissingSlots} - ${nonPreventiveSlots} - ${preventiveSlots} = ${s.total_found}</div>
+          <div style="margin-bottom: 8px;">Basic availability: ${s.total_found} / ${s.total_expected} = ${formatPercentDecimal(s.availability)}</div>
+          <div style="margin-bottom: 12px;"></div>
+          ${s.total_preventive_slots > 0 ?
+            `<div style="margin-bottom: 4px;">Expected minus preventive: ${s.total_expected} - ${preventiveSlots} = ${s.preventive_adjustment.total_expected_minus_preventive}</div>
+             <div>Adjusted availability: ${s.total_found} / ${s.preventive_adjustment.total_expected_minus_preventive} = ${s.preventive_adjustment.overall_avail_minus_preventive === "N/A" ? "N/A" : formatPercent(s.preventive_adjustment.overall_avail_minus_preventive)}</div>` :
+            '<div>No preventive maintenance to exclude</div>'
+          }
+        `;
+        inner.appendChild(calcContainer);
+
+        det.appendChild(inner);
+        blk.appendChild(det);
+        grid.appendChild(blk);
+      });
+
+      // AND block
+      {
+        const c = month.combined;
+        const blk = document.createElement('div'); blk.className='block';
+        const primary = document.createElement('div'); primary.className='primary-line';
+        const andAvail = c.total_expected > 0 ? (c.total_found_and / c.total_expected) : 0;
+        primary.innerHTML = `AND: <span style="color:#f97316; font-weight:700;">${c.total_found_and}</span> / ${c.total_expected}, Avail ${formatPercentDecimal(andAvail)}`;
+        blk.appendChild(primary);
+
+        const det = document.createElement('details'); det.className='collapsible';
+        const sum = document.createElement('summary'); sum.textContent = 'Details'; det.appendChild(sum);
+        const inner = document.createElement('div'); inner.className='details-inner';
+
+        const periods = formatMissingPeriodsNew(c.missing_by_date_and || {}, '', true);
+        const periodsCount = periods.length;
+        
+        if(periodsCount){
+          // All periods section
+          const allHeader = document.createElement('div'); allHeader.className='section-header';
+          allHeader.style.marginTop = '12px';
+          const allTitle = document.createElement('span'); allTitle.className='section-title';
+          allTitle.textContent = `All missing periods (${periodsCount} periods)`;
+          allHeader.appendChild(allTitle);
+          inner.appendChild(allHeader);
+          const pre = document.createElement('pre'); pre.className='mono'; 
+          pre.style.marginTop='2px';
+          pre.innerHTML = periods.map(p=>`${p}`).join('\n');
+          inner.appendChild(pre);
+        } else {
+          const nm = document.createElement('div'); nm.className='muted-sm'; nm.style.marginTop='6px';
+          nm.textContent = 'No missing periods';
+          inner.appendChild(nm);
+        }
+        
+        // Calculation Steps section for AND
+        const h2Header = document.createElement('div'); h2Header.className='section-header';
+        h2Header.style.marginTop='26px';
+        const h2Title = document.createElement('span'); h2Title.className='section-title';
+        h2Title.textContent = 'Calculation Breakdown';
+        h2Title.style.color = '#6b7280';
+        h2Header.appendChild(h2Title);
+        inner.appendChild(h2Header);
+        
+        const calcContainer = document.createElement('div');
+        calcContainer.style.marginTop = '2px';
+        calcContainer.style.fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace';
+        calcContainer.style.fontSize = '0.75rem'; // Smaller font size
+        calcContainer.style.color = '#374151';
+        calcContainer.style.lineHeight = '1.4';
+        calcContainer.style.background = '#f8fafc';
+        calcContainer.style.padding = '8px';
+        calcContainer.style.borderRadius = '4px';
+        calcContainer.style.border = '1px solid #e2e8f0';
+        
+        const dates = monthDateRange(month.month);
+        const numDays = dates.length;
+        
+        calcContainer.innerHTML = `
+          <div style="margin-bottom: 6px;"><strong>Found AND slots:</strong> ${c.total_found_and} (both TMS and TCR have data)</div>
+          <div style="margin-bottom: 6px;"><strong>Total expected slots:</strong> ${numDays} days × 240 slots/day = ${c.total_expected}</div>
+          <div><strong>AND availability:</strong> ${c.total_found_and} / ${c.total_expected} = ${formatPercentDecimal(andAvail)}</div>
+        `;
+        inner.appendChild(calcContainer);
+        
+        det.appendChild(inner);
+        blk.appendChild(det);
+        grid.appendChild(blk);
+      }
+
+      // OR block
+      {
+        const c = month.combined;
+        const blk = document.createElement('div'); blk.className='block';
+        const primary = document.createElement('div'); primary.className='primary-line';
+        const orAvail = c.total_expected > 0 ? (c.total_found_or / c.total_expected) : 0;
+        primary.innerHTML = `OR: <span style="color:#f97316; font-weight:700;">${c.total_found_or}</span> / ${c.total_expected}, Avail ${formatPercentDecimal(orAvail)}`;
+        blk.appendChild(primary);
+
+        const det = document.createElement('details'); det.className='collapsible';
+        const sum = document.createElement('summary'); sum.textContent = 'Details'; det.appendChild(sum);
+        const inner = document.createElement('div'); inner.className='details-inner';
+
+        const periods = formatMissingPeriodsNew(c.missing_by_date_or || {}, '', true);
+        const periodsCount = periods.length;
+        
+        if(periodsCount){
+          // All periods section
+          const allHeader = document.createElement('div'); allHeader.className='section-header';
+          allHeader.style.marginTop = '12px';
+          const allTitle = document.createElement('span'); allTitle.className='section-title';
+          allTitle.textContent = `All missing periods (${periodsCount} periods)`;
+          allHeader.appendChild(allTitle);
+          inner.appendChild(allHeader);
+          const pre = document.createElement('pre'); pre.className='mono'; 
+          pre.style.marginTop='2px';
+          pre.innerHTML = periods.map(p=>`${p}`).join('\n');
+          inner.appendChild(pre);
+        } else {
+          const nm = document.createElement('div'); nm.className='muted-sm'; nm.style.marginTop='6px';
+          nm.textContent = 'No missing periods';
+          inner.appendChild(nm);
+        }
+        
+        // Calculation Steps section for OR
+        const h2Header = document.createElement('div'); h2Header.className='section-header';
+        h2Header.style.marginTop='26px';
+        const h2Title = document.createElement('span'); h2Title.className='section-title';
+        h2Title.textContent = 'Calculation Breakdown';
+        h2Title.style.color = '#6b7280';
+        h2Header.appendChild(h2Title);
+        inner.appendChild(h2Header);
+        
+        const calcContainer = document.createElement('div');
+        calcContainer.style.marginTop = '2px';
+        calcContainer.style.fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace';
+        calcContainer.style.fontSize = '0.75rem'; // Smaller font size
+        calcContainer.style.color = '#374151';
+        calcContainer.style.lineHeight = '1.4';
+        calcContainer.style.background = '#f8fafc';
+        calcContainer.style.padding = '8px';
+        calcContainer.style.borderRadius = '4px';
+        calcContainer.style.border = '1px solid #e2e8f0';
+        
+        const dates = monthDateRange(month.month);
+        const numDays = dates.length;
+        
+        calcContainer.innerHTML = `
+          <div style="margin-bottom: 6px;"><strong>Found OR slots:</strong> ${c.total_found_or} (at least one of TMS or TCR has data)</div>
+          <div style="margin-bottom: 6px;"><strong>Total expected slots:</strong> ${numDays} days × 240 slots/day = ${c.total_expected}</div>
+          <div><strong>OR availability:</strong> ${c.total_found_or} / ${c.total_expected} = ${formatPercentDecimal(orAvail)}</div>
+        `;
+        inner.appendChild(calcContainer);
+
+        det.appendChild(inner);
+        blk.appendChild(det);
+        grid.appendChild(blk);
+      }
+
+      card.appendChild(grid);
+      monthsContainer.appendChild(card);
+    }
+  }
+
+  function renderSatelliteMonths(satelliteResults) {
+    satelliteMonthsContainer.innerHTML = '';
+    
+    // Create a single card containing all months
+    const card = document.createElement('div'); 
+    card.className = 'card';
+    
+    // Create grid for 3 months in one row
+    const grid = document.createElement('div'); 
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
+    grid.style.gap = '16px';
+    
+    for (const month of satelliteResults) {
+      const monthBlock = document.createElement('div');
+      monthBlock.style.background = '#fff';
+      monthBlock.style.borderRadius = '8px';
+      monthBlock.style.padding = '12px';
+      monthBlock.style.border = '1px solid #eef4ff';
+      
+      const title = document.createElement('h4'); 
+      title.innerHTML = formatMonthTitle(month.month);
+      title.style.marginTop = '0';
+      title.style.color = '#2979ff';
+      title.style.fontWeight = '600';
+      monthBlock.appendChild(title);
+
+      // Single Himawari block
+      const blk = document.createElement('div');
+      blk.className = 'block';
+      const primary = document.createElement('div');
+      primary.className = 'primary-line';
+      const restorationBadge = month.total_restoration_slots > 0
+        ? ` <span style="color:#2a5fb0; font-size:0.85em;">(${month.total_restoration_slots} restored)</span>`
+        : '';
+      primary.innerHTML = `${HIMAWARI_DISPLAY_NAME}: <span style="color:#f97316; font-weight:700;">${month.total_found}</span> / ${month.total_expected}, Avail ${formatPercentDecimal(month.availability)}${restorationBadge}`;
+      blk.appendChild(primary);
+
+      const preventiveLine = document.createElement('div'); 
+      preventiveLine.className = 'adj-muted';
+      if (month.total_preventive_slots && month.total_preventive_slots > 0) {
+        const availDisplay = month.preventive_adjustment.overall_avail_minus_preventive === "N/A" ? 
+          "N/A" : 
+          formatPercent(month.preventive_adjustment.overall_avail_minus_preventive);
+        preventiveLine.innerHTML = `Excluded preventive: ${month.total_found} / <span style="color:#f97316; font-weight:700;">${month.preventive_adjustment.total_expected_minus_preventive}</span>, Avail <span style="font-weight:700; color:#22c55e;">${availDisplay}</span>`;
+      } else {
+        preventiveLine.textContent = 'No preventive maintenance';
+      }
+      blk.appendChild(preventiveLine);
+
+      const det = document.createElement('details'); 
+      det.className = 'collapsible';
+      const sum = document.createElement('summary'); 
+      sum.textContent = 'Details'; 
+      det.appendChild(sum);
+      const inner = document.createElement('div'); 
+      inner.className = 'details-inner';
+
+      const periods = formatMissingPeriodsNew(month.missing_by_date || {}, '', false);
+      const periodsCount = periods.length;
+      
+      if (periodsCount) {
+        // All periods section
+        const allHeader = document.createElement('div'); 
+        allHeader.className = 'section-header';
+        allHeader.style.marginTop = '12px';
+        const allTitle = document.createElement('span'); 
+        allTitle.className = 'section-title';
+        allTitle.textContent = `All missing periods (${periodsCount} periods)`;
+        allHeader.appendChild(allTitle);
+        inner.appendChild(allHeader);
+        const pre = document.createElement('pre'); 
+        pre.className = 'mono'; 
+        pre.style.marginTop = '2px';
+        pre.innerHTML = periods.map(p => `${p}`).join('\n');
+        inner.appendChild(pre);
+      } else {
+        const nm = document.createElement('div'); 
+        nm.className = 'muted-sm'; 
+        nm.style.marginTop = '6px';
+        nm.textContent = 'No missing periods';
+        inner.appendChild(nm);
+      }
+
+      // Excluding maintenance section
+      const effPeriods = formatMissingPeriodsNew(month.effective_missing_by_date || {}, '', false);
+      const h2Header = document.createElement('div'); 
+      h2Header.className = 'section-header';
+      h2Header.style.marginTop = '12px';
+      const h2Title = document.createElement('span'); 
+      h2Title.className = 'section-title';
+      h2Title.textContent = `Excluding maintenance (${effPeriods.length} periods)`;
+      h2Header.appendChild(h2Title);
+      inner.appendChild(h2Header);
+      
+      if (effPeriods.length > 0) {
+        const pre2 = document.createElement('div');
+        pre2.style.marginTop = '2px';
+        pre2.style.fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace';
+        pre2.style.fontSize = '0.86rem';
+        pre2.style.color = '#374151';
+        pre2.style.lineHeight = '1.2';
+        
+        effPeriods.forEach(period => {
+          const periodContainer = document.createElement('div');
+          periodContainer.style.display = 'flex';
+          periodContainer.style.justifyContent = 'space-between';
+          periodContainer.style.alignItems = 'center';
+          periodContainer.style.marginBottom = '1px';
+          periodContainer.style.padding = '1px 0';
+          
+          const periodText = document.createElement('span');
+          periodText.innerHTML = period;
+          periodText.style.flex = '1';
+          
+          const addButton = document.createElement('button');
+          addButton.textContent = 'Add';
+          addButton.style.marginLeft = '12px';
+          addButton.style.padding = '2px 8px';
+          addButton.style.fontSize = '0.8em';
+          addButton.style.backgroundColor = '#2979ff';
+          addButton.style.color = 'white';
+          addButton.style.border = 'none';
+          addButton.style.borderRadius = '4px';
+          addButton.style.cursor = 'pointer';
+          addButton.style.flexShrink = '0';
+          
+          addButton.addEventListener('click', function() {
+            const maintenanceUrl = createMaintenanceUrl(period, HIMAWARI_FULL_NAME, yearSel.value);
+            window.open(maintenanceUrl, '_blank');
+          });
+
+          addButton.addEventListener('mouseover', function() {
+            this.style.backgroundColor = '#1a68e6';
+          });
+          
+          addButton.addEventListener('mouseout', function() {
+            this.style.backgroundColor = '#2979ff';
+          });
+          
+          periodContainer.appendChild(periodText);
+          periodContainer.appendChild(addButton);
+          pre2.appendChild(periodContainer);
+        });
+        
+        inner.appendChild(pre2);
+      } else {
+        const nm2 = document.createElement('div'); 
+        nm2.className = 'muted-sm'; 
+        nm2.style.marginTop = '2px';
+        nm2.textContent = 'No missing periods after excluding maintenance';
+        inner.appendChild(nm2);
+      }
+
+      // Calculation Breakdown
+      const calcHeader = document.createElement('div'); calcHeader.className='section-header';
+      calcHeader.style.marginTop='26px';
+      const calcTitle = document.createElement('span'); calcTitle.className='section-title';
+      calcTitle.textContent = 'Calculation Breakdown';
+      calcTitle.style.color = '#6b7280';
+      calcHeader.appendChild(calcTitle);
+      inner.appendChild(calcHeader);
+      
+      const calcContainer = document.createElement('div');
+      calcContainer.style.marginTop = '2px';
+      calcContainer.style.fontFamily = 'ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", monospace';
+      calcContainer.style.fontSize = '0.75rem'; // Smaller font size
+      calcContainer.style.color = '#374151';
+      calcContainer.style.lineHeight = '1.4';
+      calcContainer.style.background = '#f8fafc';
+      calcContainer.style.padding = '8px';
+      calcContainer.style.borderRadius = '4px';
+      calcContainer.style.border = '1px solid #e2e8f0';
+      
+      const dates = monthDateRange(month.month);
+      const numDays = dates.length;
+      
+      // Calculate effective missing slots (excluding maintenance)
+      const effectiveMissingSlots = Object.values(month.effective_missing_by_date || {}).reduce((sum, slots) => sum + slots.length, 0);
+      const preventiveSlots = month.total_preventive_slots || 0;
+      const nonPreventiveSlots = Math.max(0, (month.total_maintenance_slots || 0) - preventiveSlots);
+      const restorationSlots = month.total_restoration_slots || 0;
+      const totalUnavailable = effectiveMissingSlots + nonPreventiveSlots + preventiveSlots;
+
+      const restorationLine = restorationSlots > 0
+        ? `<div style="margin-bottom: 4px; color: #2a5fb0;">Data Restoration: ${restorationSlots} slots confirmed available (counted as found, excluded from maintenance and missing counts above)</div>`
+        : '';
+      calcContainer.innerHTML = `
+        <div style="margin-bottom: 4px;">Total expected slots: ${numDays} days × 142 slots/day = ${month.total_expected}</div>
+        <div style="margin-bottom: 4px; color: #dc2626;">Missing data slots (exclude maintenance): ${effectiveMissingSlots}</div>
+        <div style="margin-bottom: 4px; color: #dc2626;">Non-preventive maintenance slots: ${nonPreventiveSlots}</div>
+        <div style="margin-bottom: 4px; color: #dc2626;">Preventive maintenance slots: ${preventiveSlots}</div>
+        ${restorationLine}
+        <div style="margin-bottom: 4px;">Found data slots: ${month.total_expected} - ${effectiveMissingSlots} - ${nonPreventiveSlots} - ${preventiveSlots} = ${month.total_found}</div>
+
+        <div style="margin-bottom: 8px;">Basic availability: ${month.total_found} / ${month.total_expected} = ${formatPercentDecimal(month.availability)}</div>
+        <div style="margin-bottom: 12px;"></div>
+        ${month.total_preventive_slots > 0 ?
+          `<div style="margin-bottom: 4px;">Expected minus preventive: ${month.total_expected} - ${preventiveSlots} = ${month.preventive_adjustment.total_expected_minus_preventive}</div>
+           <div>Adjusted availability: ${month.total_found} / ${month.preventive_adjustment.total_expected_minus_preventive} = ${month.preventive_adjustment.overall_avail_minus_preventive === "N/A" ? "N/A" : formatPercent(month.preventive_adjustment.overall_avail_minus_preventive)}</div>` :
+          '<div>No preventive maintenance to exclude</div>'
+        }
+      `;
+      inner.appendChild(calcContainer);
+
+      det.appendChild(inner);
+      blk.appendChild(det);
+      monthBlock.appendChild(blk);
+      grid.appendChild(monthBlock);
+    }
+
+    card.appendChild(grid);
+    satelliteMonthsContainer.appendChild(card);
+  }
+
+  async function loadAndRender(){
+    try{
+      loadBtn.disabled = true;
+      showLoading('Loading quarterly data...');
+      updateStatus('Starting...');
+      monthsContainer.innerHTML = '';
+      satelliteMonthsContainer.innerHTML = '';
+      copyButtonsCard.style.display = 'none';
+      satelliteCopyButtonsCard.style.display = 'none';
+      const keys = Object.keys(sessionStorage).filter(k => k && (k.startsWith('f:') || k.startsWith('t:')));
+      for(const k of keys) sessionStorage.removeItem(k);
+      const y = yearSel.value; const q = parseInt(quarterSel.value,10);
+      const months = monthsForQuarter(y,q);
+
+      // Load maintenance data and render remarks
+      updateStatus('Loading maintenance data...');
+      const maintenance = await loadMaintenance();
+      renderMaintenanceRemarks(maintenance, parseInt(y, 10));
+      // Update the title with the selected year after loading data
+      updateSatelliteMaintenanceTitle(y);
+
+      // Load radar data
+      updateStatus('Loading radar data...');
+      const res = await computeForMonths(months);
+      currentMonthsResults = res;
+      renderMonths(res);
+
+      // Load satellite data
+      updateStatus('Loading satellite data...');
+      const satelliteRes = await computeSatelliteForMonths(months);
+      currentSatelliteResults = satelliteRes;
+      renderSatelliteMonths(satelliteRes);
+
+      // Show appropriate copy buttons based on current tab
+      if (currentActiveTab === 'radar') {
+        copyButtonsCard.style.display = 'block';
+      } else if (currentActiveTab === 'satellite') {
+        satelliteCopyButtonsCard.style.display = 'block';
+      }
+      
+      updateStatus('');
+    }catch(e){
+      updateStatus('Error: ' + (e && e.message ? e.message : String(e)));
+    } finally {
+      loadBtn.disabled = false;
+      hideLoading();
+    }
+  }
+
+  loadBtn.addEventListener('click', loadAndRender);
+
+  // Previous Quarter button - sets selectors to previous quarter and loads
+  document.getElementById('prevQuarterBtn').addEventListener('click', () => {
+    let year = parseInt(yearSel.value, 10);
+    let quarter = parseInt(quarterSel.value, 10);
+
+    // Go to previous quarter
+    quarter--;
+    if (quarter < 1) {
+      quarter = 4;
+      year--;
+    }
+
+    // Update selectors
+    yearSel.value = String(year);
+    quarterSel.value = String(quarter);
+
+    // Update title and load data
+    updateSatelliteMaintenanceTitle();
+    loadAndRender();
+  });
+
+  // Next Quarter button - sets selectors to next quarter and loads
+  document.getElementById('nextQuarterBtn').addEventListener('click', () => {
+    let year = parseInt(yearSel.value, 10);
+    let quarter = parseInt(quarterSel.value, 10);
+
+    // Go to next quarter
+    quarter++;
+    if (quarter > 4) {
+      quarter = 1;
+      year++;
+    }
+
+    // Update selectors
+    yearSel.value = String(year);
+    quarterSel.value = String(quarter);
+
+    // Update title and load data
+    updateSatelliteMaintenanceTitle();
+    loadAndRender();
+  });
+
+  // Update satellite maintenance title when year changes
+  yearSel.addEventListener('change', () => {
+    updateSatelliteMaintenanceTitle();
+  });
+
+  // Auto-load on page load
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      loadAndRender();
+    }, 500);
+  });
+
+})();
+</script>
+</body>
+</html>

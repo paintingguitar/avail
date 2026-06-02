@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Station Availability Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-base: #fafafa;
+            --bg-surface: #ffffff;
+            --bg-elevated: #f5f5f5;
+            --text-primary: #1a1a2e;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border: #e2e8f0;
+            --accent: #0066ff;
+            --accent-soft: #e6f0ff;
+            --success: #10b981;
+            --success-soft: #d1fae5;
+            --warning: #f59e0b;
+            --warning-soft: #fef3c7;
+            --danger: #ef4444;
+            --danger-soft: #fee2e2;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+        }
+
+        .dark {
+            --bg-base: #0f172a;
+            --bg-surface: #1e293b;
+            --bg-elevated: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: #334155;
+            --accent: #3b82f6;
+            --accent-soft: rgba(59, 130, 246, 0.15);
+            --success: #34d399;
+            --success-soft: rgba(52, 211, 153, 0.15);
+            --warning: #fbbf24;
+            --warning-soft: rgba(251, 191, 36, 0.15);
+            --danger: #f87171;
+            --danger-soft: rgba(248, 113, 113, 0.15);
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', system-ui, sans-serif;
+            background: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px 16px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .header h1 {
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .card-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-header h2 i {
+            color: var(--accent);
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 16px;
+            font-family: 'IBM Plex Mono', monospace;
+            transition: all 0.15s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .quick-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .quick-select-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .quick-btn {
+            padding: 6px 12px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-family: inherit;
+        }
+
+        .quick-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .quick-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            background: var(--bg-elevated);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            font-family: 'IBM Plex Mono', monospace;
+            line-height: 1.2;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+
+        .stat-excellent { color: var(--success); }
+        .stat-good { color: var(--accent); }
+        .stat-warning { color: var(--warning); }
+        .stat-danger { color: var(--danger); }
+
+        .table-container {
+            overflow-x: auto;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg-elevated);
+            font-weight: 600;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tbody tr:hover {
+            background: var(--accent-soft);
+        }
+
+        td {
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .period-cell {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .availability-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bar-track {
+            flex: 1;
+            height: 6px;
+            background: var(--bg-elevated);
+            border-radius: 3px;
+            overflow: hidden;
+            min-width: 80px;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .bar-fill.excellent { background: var(--success); }
+        .bar-fill.good { background: var(--accent); }
+        .bar-fill.warning { background: var(--warning); }
+        .bar-fill.danger { background: var(--danger); }
+
+        .bar-value {
+            min-width: 55px;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: var(--border);
+            margin-bottom: 16px;
+        }
+
+        .empty-state h3 {
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .loading-progress {
+            color: var(--accent);
+            font-family: 'IBM Plex Mono', monospace;
+            font-weight: 600;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-surface);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-content h4 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+        }
+
+        .modal-content p {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .btn-secondary {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .info-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--bg-elevated);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-left: auto;
+        }
+
+        .info-badge i {
+            color: var(--accent);
+        }
+
+        .station-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--accent-soft);
+            color: var(--accent);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        #stationDescription {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-style: italic;
+            align-self: center;
+            max-width: 600px;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 16px 12px;
+            }
+
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+
+            th, td {
+                padding: 10px 12px;
+                font-size: 0.8rem;
+            }
+
+            .availability-bar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
+
+            .bar-track {
+                width: 100%;
+            }
+
+            .bar-value {
+                text-align: left;
+            }
+
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .info-badge {
+                margin-left: 0;
+            }
+
+            #stationDescription {
+                margin-left: 0;
+                margin-top: 8px;
+                font-size: 0.8rem;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .stats-grid .stat-item {
+            animation: fadeIn 0.3s ease-out backwards;
+        }
+
+        .stats-grid .stat-item:nth-child(1) { animation-delay: 0.05s; }
+        .stats-grid .stat-item:nth-child(2) { animation-delay: 0.1s; }
+        .stats-grid .stat-item:nth-child(3) { animation-delay: 0.15s; }
+        .stats-grid .stat-item:nth-child(4) { animation-delay: 0.2s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Station Availability Dashboard</h1>
+        </header>
+
+        <!-- Station & Controls -->
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-sliders-h"></i> Configuration</h2>
+                <div class="station-badge" id="stationBadge">
+                    <i class="fas fa-satellite-dish"></i>
+                    <span id="stationName">Loading...</span>
+                </div>
+                <div id="stationDescription"></div>
+            </div>
+            <div class="card-body">
+                <div class="controls-grid">
+                    <div class="form-group">
+                        <label>Station</label>
+                        <select id="stationSelect">
+                            <option value="">Loading stations...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Start Date (HKT)</label>
+                        <input type="date" id="startDate">
+                    </div>
+                    <div class="form-group">
+                        <label>End Date (HKT)</label>
+                        <input type="date" id="endDate">
+                    </div>
+                    <div class="form-group">
+                        <label>View Mode</label>
+                        <select id="viewMode">
+                            <option value="daily">Daily</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="quarterly">Quarterly</option>
+                            <option value="yearly">Yearly</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="justify-content: flex-end;">
+                        <button class="btn btn-primary" id="calculateBtn">
+                            <i class="fas fa-calculator"></i> Calculate
+                        </button>
+                    </div>
+                </div>
+
+                <div class="quick-select">
+                    <span class="quick-select-label">Quick:</span>
+                    <button class="quick-btn" data-period="today">Today</button>
+                    <button class="quick-btn" data-period="yesterday">Yesterday</button>
+                    <button class="quick-btn" data-period="last7days">Last 7 Days</button>
+                    <button class="quick-btn" data-period="last30days">Last 30 Days</button>
+                    <button class="quick-btn" data-period="thisMonth">This Month</button>
+                    <button class="quick-btn" data-period="lastMonth">Last Month</button>
+                    <button class="quick-btn" data-period="thisQuarter">This Quarter</button>
+                    <button class="quick-btn" data-period="thisYear">This Year</button>
+                    <button class="quick-btn" data-period="allTime">All Time</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Summary -->
+        <div class="stats-grid" id="statsGrid" style="display: none;">
+            <div class="stat-item">
+                <div class="stat-value" id="avgAvailability">--</div>
+                <div class="stat-label">Avg Availability</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totalRecords">--</div>
+                <div class="stat-label">Total Records</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="expectedRecords">--</div>
+                <div class="stat-label">Expected</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="periodCount">--</div>
+                <div class="stat-label">Periods</div>
+            </div>
+        </div>
+
+        <!-- Results Table -->
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-table"></i> Availability Results</h2>
+                <div class="info-badge" id="intervalBadge">
+                    <i class="fas fa-clock"></i>
+                    <span id="intervalInfo">Select a station</span>
+                </div>
+            </div>
+            <div class="table-container">
+                <div class="empty-state" id="emptyState">
+                    <i class="fas fa-chart-area"></i>
+                    <h3>No Data Loaded</h3>
+                    <p>Select a station and date range, then click "Calculate" to view availability.</p>
+                </div>
+                <table id="resultsTable" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Period</th>
+                            <th>Availability</th>
+                            <th>Records</th>
+                            <th>Expected</th>
+                            <th>Missing</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text">Fetching availability data...</div>
+        <div class="loading-progress" id="loadingProgress">0 / 0</div>
+    </div>
+
+    <!-- Error Modal -->
+    <div class="modal-overlay" id="errorModal">
+        <div class="modal-content">
+            <h4><i class="fas fa-exclamation-circle" style="color: var(--danger);"></i> Error</h4>
+            <p id="errorMessage">An error occurred.</p>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" id="closeModalBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // STATION CONFIGURATION
+        // Loads from external JSON; falls back to embedded config
+        // ============================================================
+        let STATIONS_CONFIG = { stations: [] };
+        const CONFIG_URL = "availability_stations_config.json";
+        const BASE_URL = "http://radsats36";
+
+        // Today's data refreshes after this many minutes; past days cache forever
+        const CACHE_VALIDITY_MINUTES = 1;
+
+        async function loadStationsConfig() {
+            try {
+                const response = await fetch(CONFIG_URL);
+                if (!response.ok) throw new Error(`Failed to load config: ${response.status}`);
+                STATIONS_CONFIG = await response.json();
+                return true;
+            } catch (error) {
+                console.error('Config load failed, using fallback:', error.message);
+                STATIONS_CONFIG = {
+                    stations: [
+                        {
+                            id: "Disdrometer",
+                            name: "Disdrometer",
+                            interval: 5,
+                            dataSource: "disdrometer_file_list/avail_data",
+                            filePattern: "RF_rate_past_2hrs",
+                            description: "Disdrometer > Rainfall rate (past 2 hrs)",
+                            timezone: "HKT",
+                            dataStartDate: "2024-04-02"
+                        }
+                    ]
+                };
+                return false;
+            }
+        }
+
+        // ============================================================
+        // STATE
+        // ============================================================
+        let currentStation = null;
+        const cachedData = new Map();
+
+        // ============================================================
+        // DOM ELEMENTS
+        // ============================================================
+        const stationSelect = document.getElementById('stationSelect');
+        const stationNameSpan = document.getElementById('stationName');
+        const stationDescription = document.getElementById('stationDescription');
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+        const viewModeSelect = document.getElementById('viewMode');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const resultsTable = document.getElementById('resultsTable');
+        const resultsBody = document.getElementById('resultsBody');
+        const emptyState = document.getElementById('emptyState');
+        const statsGrid = document.getElementById('statsGrid');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingProgress = document.getElementById('loadingProgress');
+        const errorModal = document.getElementById('errorModal');
+        const errorMessage = document.getElementById('errorMessage');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const intervalInfo = document.getElementById('intervalInfo');
+
+        // ============================================================
+        // INITIALIZATION
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', async () => {
+            initializeDarkMode();
+            await loadStationsConfig();
+            initializeStations();
+            setupEventListeners();
+        });
+
+        function initializeDarkMode() {
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            }
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+                document.documentElement.classList.toggle('dark', event.matches);
+            });
+        }
+
+        function initializeStations() {
+            stationSelect.innerHTML = '';
+            STATIONS_CONFIG.stations.forEach(station => {
+                const option = document.createElement('option');
+                option.value = station.id;
+                option.textContent = station.name;
+                stationSelect.appendChild(option);
+            });
+
+            if (STATIONS_CONFIG.stations.length > 0) {
+                selectStation(STATIONS_CONFIG.stations[0].id);
+            }
+        }
+
+        function selectStation(stationId) {
+            currentStation = STATIONS_CONFIG.stations.find(s => s.id === stationId);
+            if (!currentStation) return;
+
+            stationSelect.value = stationId;
+            stationNameSpan.textContent = currentStation.name;
+
+            // Show description
+            if (currentStation.description) {
+                stationDescription.textContent = currentStation.description;
+                stationDescription.style.display = 'block';
+            } else {
+                stationDescription.style.display = 'none';
+            }
+
+            // Update interval badge dynamically based on selected station
+            const recordsPerDay = (24 * 60) / currentStation.interval;
+            intervalInfo.textContent = `${currentStation.name} \u00b7 ${currentStation.interval}-min interval (${recordsPerDay}/day)`;
+
+            initializeDateInputs();
+            cachedData.clear();
+        }
+
+        function initializeDateInputs() {
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+
+            const dataStartDate = new Date(currentStation.dataStartDate);
+            const todayStr = formatDateForInput(today);
+            const startMinStr = formatDateForInput(dataStartDate);
+
+            startDateInput.min = startMinStr;
+            startDateInput.max = todayStr;
+            endDateInput.min = startMinStr;
+            endDateInput.max = todayStr;
+
+            startDateInput.value = formatDateForInput(yesterday);
+            endDateInput.value = formatDateForInput(yesterday);
+        }
+
+        function setupEventListeners() {
+            stationSelect.addEventListener('change', () => selectStation(stationSelect.value));
+            calculateBtn.addEventListener('click', calculateAvailability);
+
+            document.querySelectorAll('.quick-btn').forEach(btn => {
+                btn.addEventListener('click', () => handleQuickSelect(btn.dataset.period));
+            });
+
+            startDateInput.addEventListener('change', validateDateRange);
+            endDateInput.addEventListener('change', validateDateRange);
+
+            closeModalBtn.addEventListener('click', closeModal);
+            errorModal.addEventListener('click', (e) => {
+                if (e.target === errorModal) closeModal();
+            });
+        }
+
+        function validateDateRange() {
+            const start = new Date(startDateInput.value);
+            const end = new Date(endDateInput.value);
+            if (start > end) {
+                endDateInput.value = startDateInput.value;
+            }
+        }
+
+        function handleQuickSelect(period) {
+            document.querySelectorAll('.quick-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[data-period="${period}"]`).classList.add('active');
+
+            const today = new Date();
+            const todayStr = formatDateForInput(today);
+            const dataStartDate = new Date(currentStation.dataStartDate);
+            let startDate, endDate;
+
+            switch (period) {
+                case 'today':
+                    startDate = endDate = todayStr;
+                    viewModeSelect.value = 'daily';
+                    break;
+                case 'yesterday': {
+                    const yesterday = new Date(today);
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    startDate = endDate = formatDateForInput(yesterday);
+                    viewModeSelect.value = 'daily';
+                    break;
+                }
+                case 'last7days': {
+                    const last7 = new Date(today);
+                    last7.setDate(last7.getDate() - 6);
+                    startDate = formatDateForInput(last7);
+                    endDate = todayStr;
+                    viewModeSelect.value = 'daily';
+                    break;
+                }
+                case 'last30days': {
+                    const last30 = new Date(today);
+                    last30.setDate(last30.getDate() - 29);
+                    startDate = formatDateForInput(last30);
+                    endDate = todayStr;
+                    viewModeSelect.value = 'daily';
+                    break;
+                }
+                case 'thisMonth':
+                    startDate = formatDateForInput(new Date(today.getFullYear(), today.getMonth(), 1));
+                    endDate = todayStr;
+                    viewModeSelect.value = 'daily';
+                    break;
+                case 'lastMonth': {
+                    const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                    const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+                    startDate = formatDateForInput(lastMonthStart);
+                    endDate = formatDateForInput(lastMonthEnd);
+                    viewModeSelect.value = 'daily';
+                    break;
+                }
+                case 'thisQuarter': {
+                    const quarterStart = new Date(today.getFullYear(), Math.floor(today.getMonth() / 3) * 3, 1);
+                    startDate = formatDateForInput(quarterStart);
+                    endDate = todayStr;
+                    viewModeSelect.value = 'monthly';
+                    break;
+                }
+                case 'thisYear':
+                    startDate = formatDateForInput(new Date(today.getFullYear(), 0, 1));
+                    endDate = todayStr;
+                    viewModeSelect.value = 'monthly';
+                    break;
+                case 'allTime':
+                    startDate = formatDateForInput(dataStartDate);
+                    endDate = todayStr;
+                    viewModeSelect.value = 'monthly';
+                    break;
+            }
+
+            if (new Date(startDate) < dataStartDate) {
+                startDate = formatDateForInput(dataStartDate);
+            }
+
+            startDateInput.value = startDate;
+            endDateInput.value = endDate;
+        }
+
+        // ============================================================
+        // DATE UTILITIES
+        // ============================================================
+        function formatDateForInput(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function formatDateYYYYMMDD(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}${month}${day}`;
+        }
+
+        function getDateRange(startDate, endDate) {
+            const dates = [];
+            const startTime = startDate.getTime();
+            const endTime = endDate.getTime();
+            const dayMs = 24 * 60 * 60 * 1000;
+
+            for (let time = startTime; time <= endTime; time += dayMs) {
+                dates.push(new Date(time));
+            }
+            return dates;
+        }
+
+        // ============================================================
+        // DATA FETCHING with smart cache
+        // - Past days: cached forever (within session / station)
+        // - Today: re-fetched after CACHE_VALIDITY_MINUTES
+        // ============================================================
+        async function fetchDailyData(dateStr) {
+            const cacheKey = `${currentStation.id}_${dateStr}`;
+
+            if (cachedData.has(cacheKey)) {
+                const cached = cachedData.get(cacheKey);
+                const todayStr = formatDateYYYYMMDD(new Date());
+
+                // For today's data, check freshness
+                if (dateStr === todayStr) {
+                    if (cached.timestamp && (Date.now() - cached.timestamp) < CACHE_VALIDITY_MINUTES * 60 * 1000) {
+                        return cached;
+                    }
+                    // Stale today data → will re-fetch below
+                } else {
+                    // Past days → always use cache
+                    return cached;
+                }
+            }
+
+            const url = `${BASE_URL}/${currentStation.dataSource}/${dateStr}_${currentStation.filePattern}.json`;
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        const result = { count: 0, found: false, timestamp: Date.now() };
+                        cachedData.set(cacheKey, result);
+                        return result;
+                    }
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                const result = {
+                    count: data.counts?.unique_timestamps || data.found_timestamps?.length || 0,
+                    found: true,
+                    timestamp: Date.now()
+                };
+                cachedData.set(cacheKey, result);
+                return result;
+            } catch (error) {
+                console.error(`Error fetching ${dateStr}:`, error.message);
+                const result = { count: 0, found: false, error: error.message, timestamp: Date.now() };
+                cachedData.set(cacheKey, result);
+                return result;
+            }
+        }
+
+        // ============================================================
+        // AVAILABILITY CALCULATION
+        // ============================================================
+        async function calculateAvailability() {
+            if (!currentStation) {
+                showError('Please select a station first.');
+                return;
+            }
+
+            const startDate = new Date(startDateInput.value);
+            const endDate = new Date(endDateInput.value);
+            const viewMode = viewModeSelect.value;
+
+            if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+                showError('Please select valid start and end dates.');
+                return;
+            }
+
+            if (startDate > endDate) {
+                showError('Start date must be before or equal to end date.');
+                return;
+            }
+
+            showLoading(true);
+
+            try {
+                const dates = getDateRange(startDate, endDate);
+                const totalDates = dates.length;
+                const dailyData = new Map();
+                const recordsPerDay = (24 * 60) / currentStation.interval;
+
+                for (let i = 0; i < dates.length; i++) {
+                    const date = dates[i];
+                    const dateStr = formatDateYYYYMMDD(date);
+                    const data = await fetchDailyData(dateStr);
+                    dailyData.set(dateStr, data);
+                    loadingProgress.textContent = `${i + 1} / ${totalDates}`;
+                }
+
+                let results;
+                switch (viewMode) {
+                    case 'daily':
+                        results = calculateDailyView(dates, dailyData, recordsPerDay);
+                        break;
+                    case 'monthly':
+                        results = calculateMonthlyView(dates, dailyData, recordsPerDay);
+                        break;
+                    case 'quarterly':
+                        results = calculateQuarterlyView(dates, dailyData, recordsPerDay);
+                        break;
+                    case 'yearly':
+                        results = calculateYearlyView(dates, dailyData, recordsPerDay);
+                        break;
+                }
+
+                displayResults(results);
+            } catch (error) {
+                console.error('Calculation error:', error);
+                showError('Error calculating availability: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function calculateDailyView(dates, dailyData, recordsPerDay) {
+            return dates.map(date => {
+                const dateStr = formatDateYYYYMMDD(date);
+                const data = dailyData.get(dateStr) || { count: 0 };
+                const expected = recordsPerDay;
+                const availability = Math.min((data.count / expected) * 100, 100);
+
+                return {
+                    period: formatDisplayDate(date),
+                    periodKey: dateStr,
+                    count: data.count,
+                    expected,
+                    missing: Math.max(expected - data.count, 0),
+                    availability
+                };
+            });
+        }
+
+        function calculateMonthlyView(dates, dailyData, recordsPerDay) {
+            const monthlyMap = new Map();
+
+            for (const date of dates) {
+                const dateStr = formatDateYYYYMMDD(date);
+                const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                const data = dailyData.get(dateStr) || { count: 0 };
+
+                if (!monthlyMap.has(monthKey)) {
+                    monthlyMap.set(monthKey, { count: 0, days: 0 });
+                }
+                const month = monthlyMap.get(monthKey);
+                month.count += data.count;
+                month.days += 1;
+            }
+
+            const results = [];
+            for (const [monthKey, data] of monthlyMap) {
+                const [year, month] = monthKey.split('-');
+                const date = new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
+                const expected = data.days * recordsPerDay;
+                const availability = Math.min((data.count / expected) * 100, 100);
+
+                results.push({
+                    period: date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' }),
+                    periodKey: monthKey,
+                    count: data.count,
+                    expected,
+                    missing: Math.max(expected - data.count, 0),
+                    availability
+                });
+            }
+            return results;
+        }
+
+        function calculateQuarterlyView(dates, dailyData, recordsPerDay) {
+            const quarterlyMap = new Map();
+
+            for (const date of dates) {
+                const dateStr = formatDateYYYYMMDD(date);
+                const quarter = Math.floor(date.getMonth() / 3) + 1;
+                const quarterKey = `${date.getFullYear()}-Q${quarter}`;
+                const data = dailyData.get(dateStr) || { count: 0 };
+
+                if (!quarterlyMap.has(quarterKey)) {
+                    quarterlyMap.set(quarterKey, { count: 0, days: 0, year: date.getFullYear(), quarter });
+                }
+                const q = quarterlyMap.get(quarterKey);
+                q.count += data.count;
+                q.days += 1;
+            }
+
+            const results = [];
+            for (const [, data] of quarterlyMap) {
+                const expected = data.days * recordsPerDay;
+                const availability = Math.min((data.count / expected) * 100, 100);
+
+                results.push({
+                    period: `${data.year} Q${data.quarter}`,
+                    periodKey: `${data.year}-Q${data.quarter}`,
+                    count: data.count,
+                    expected,
+                    missing: Math.max(expected - data.count, 0),
+                    availability
+                });
+            }
+            return results;
+        }
+
+        function calculateYearlyView(dates, dailyData, recordsPerDay) {
+            const yearlyMap = new Map();
+
+            for (const date of dates) {
+                const dateStr = formatDateYYYYMMDD(date);
+                const yearKey = date.getFullYear().toString();
+                const data = dailyData.get(dateStr) || { count: 0 };
+
+                if (!yearlyMap.has(yearKey)) {
+                    yearlyMap.set(yearKey, { count: 0, days: 0 });
+                }
+                const y = yearlyMap.get(yearKey);
+                y.count += data.count;
+                y.days += 1;
+            }
+
+            const results = [];
+            for (const [yearKey, data] of yearlyMap) {
+                const expected = data.days * recordsPerDay;
+                const availability = Math.min((data.count / expected) * 100, 100);
+
+                results.push({
+                    period: yearKey,
+                    periodKey: yearKey,
+                    count: data.count,
+                    expected,
+                    missing: Math.max(expected - data.count, 0),
+                    availability
+                });
+            }
+            return results;
+        }
+
+        function formatDisplayDate(date) {
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                weekday: 'short'
+            });
+        }
+
+        // ============================================================
+        // DISPLAY
+        // ============================================================
+        function getAvailabilityClass(percentage) {
+            if (percentage >= 99) return 'excellent';
+            if (percentage >= 95) return 'good';
+            if (percentage >= 80) return 'warning';
+            return 'danger';
+        }
+
+        function displayResults(results) {
+            if (results.length === 0) {
+                resultsTable.style.display = 'none';
+                emptyState.style.display = 'block';
+                statsGrid.style.display = 'none';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            resultsTable.style.display = 'table';
+            statsGrid.style.display = 'grid';
+
+            const totalRecords = results.reduce((sum, r) => sum + r.count, 0);
+            const totalExpected = results.reduce((sum, r) => sum + r.expected, 0);
+            const avgAvailability = totalExpected > 0 ? (totalRecords / totalExpected) * 100 : 0;
+
+            const avgEl = document.getElementById('avgAvailability');
+            avgEl.textContent = avgAvailability.toFixed(2) + '%';
+            avgEl.className = 'stat-value stat-' + getAvailabilityClass(avgAvailability);
+
+            document.getElementById('totalRecords').textContent = totalRecords.toLocaleString();
+            document.getElementById('expectedRecords').textContent = totalExpected.toLocaleString();
+            document.getElementById('periodCount').textContent = results.length;
+
+            resultsBody.innerHTML = results.map(r => {
+                const cls = getAvailabilityClass(r.availability);
+                const missingColor = r.missing > 0 ? 'var(--danger)' : 'var(--success)';
+                const missingText = r.missing > 0 ? r.missing.toLocaleString() : '\u2713';
+                return '<tr>'
+                    + '<td class="period-cell">' + r.period + '</td>'
+                    + '<td><div class="availability-bar">'
+                    + '<div class="bar-track"><div class="bar-fill ' + cls + '" style="width: ' + r.availability + '%"></div></div>'
+                    + '<span class="bar-value stat-' + cls + '">' + r.availability.toFixed(2) + '%</span>'
+                    + '</div></td>'
+                    + '<td>' + r.count.toLocaleString() + '</td>'
+                    + '<td>' + r.expected.toLocaleString() + '</td>'
+                    + '<td style="color: ' + missingColor + '">' + missingText + '</td>'
+                    + '</tr>';
+            }).join('');
+        }
+
+        // ============================================================
+        // UI HELPERS
+        // ============================================================
+        function showLoading(show) {
+            loadingOverlay.classList.toggle('active', show);
+            calculateBtn.disabled = show;
+            if (show) {
+                loadingProgress.textContent = '0 / 0';
+            }
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorModal.classList.add('active');
+        }
+
+        function closeModal() {
+            errorModal.classList.remove('active');
+        }
+    </script>
+</body>
+</html>

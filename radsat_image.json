@@ -1,0 +1,206 @@
+{
+  "TMS": {
+    "name": "TMS",
+    "type": "dual",
+    "category": "Radar",
+    "data_source": [
+      "Radar_TMS_EEC/CAPPI_Ref_64km",
+      "TMS_RAPID_SCAN/TMS_RS_PPI_Z_000_064"
+    ],
+    "description": "Normal Scan: TMS > CAPPI > 3km_R, 64km (Radar_TMS_EEC/CAPPI_Ref_64km)\nRapid Scan: TMS RS > RS PPI > dBZ(H), 64km (TMS_RAPID_SCAN/TMS_RS_PPI_Z_000_064)",
+    "timezone": "HKT",
+    "has_maintenance": false
+  },
+  "TMS (raw)": {
+    "name": "TMS (raw)",
+    "type": "single",
+    "category": "Radar",
+    "data_source": "../raw_file_list/TMS/6min_intervals_with_rapidscan",
+    "interval": 6,
+    "description": "Raw TMS data from /backup_data/TMS_IrisFormatRaw_archive (via radarop@rad19-t1), checks for raw data with the exact minutes 00, 06, 12, 18, 24, 30, 36, 42, 48, 54 at 6-minute intervals, with missing raw data filled by rapid scan data when available.\nData processing runs daily at 9:30am for the previous day, so current day data may not be available until the next morning.",
+    "timezone": "HKT",
+    "has_maintenance": true
+  },
+  "TMS (raw) (no maint)": {
+    "name": "TMS (raw) (no maint)",
+    "type": "single",
+    "category": "Radar",
+    "data_source": "../raw_file_list/TMS/6min_intervals_with_rapidscan",
+    "interval": 6,
+    "description": "Raw TMS data from /backup_data/TMS_IrisFormatRaw_archive (via radarop@rad19-t1), checks for raw data with the exact minutes 00, 06, 12, 18, 24, 30, 36, 42, 48, 54 at 6-minute intervals, with missing raw data filled by rapid scan data when available.\nData processing runs daily at 9:30am for the previous day, so current day data may not be available until the next morning.",
+    "timezone": "HKT",
+    "has_maintenance": false
+  },
+  "TCR": {
+    "name": "TCR",
+    "type": "dual",
+    "category": "Radar",
+    "data_source": [
+      "Radar_TCR/CAPPI_Ref_256km",
+      "Radar_TCR_rapid_scan/TCR_RS_Z_064km"
+    ],
+    "description": "Normal Scan: TCR > CAPPI > 3km_R, 256km (Radar_TCR/CAPPI_Ref_256km)\nRapid Scan: TCR RS > RS PPI > dBZ(H), 64km (Radar_TCR_rapid_scan/TCR_RS_Z_064km)",
+    "timezone": "HKT",
+    "has_maintenance": false
+  },
+  "TCR (raw)": {
+    "name": "TCR (raw)",
+    "type": "single",
+    "category": "Radar",
+    "data_source": "../raw_file_list/TCR/6min_intervals_with_rapidscan",
+    "interval": 6,
+    "description": "Raw TCR data from /backup_data/TCR_IrisFormatRaw_archive (via radarop@rad19-t1), checks for raw data with the exact minutes 00, 06, 12, 18, 24, 30, 36, 42, 48, 54 at 6-minute intervals, with missing raw data filled by rapid scan data when available.\nData processing runs daily at 9:30am for the previous day, so current day data may not be available until the next morning.",
+    "timezone": "HKT",
+    "has_maintenance": true
+  },
+  "TCR (raw) (no maint)": {
+    "name": "TCR (raw) (no maint)",
+    "type": "single",
+    "category": "Radar",
+    "data_source": "../raw_file_list/TCR/6min_intervals_with_rapidscan",
+    "interval": 6,
+    "description": "Raw TCR data from /backup_data/TCR_IrisFormatRaw_archive (via radarop@rad19-t1), checks for raw data with the exact minutes 00, 06, 12, 18, 24, 30, 36, 42, 48, 54 at 6-minute intervals, with missing raw data filled by rapid scan data when available.\nData processing runs daily at 9:30am for the previous day, so current day data may not be available until the next morning.",
+    "timezone": "HKT",
+    "has_maintenance": false
+  },
+  "CCH HKWS1 (raw)": {
+    "name": "CCH HKWS1 (raw)",
+    "type": "single",
+    "category": "Radar",
+    "data_source": "../CCH_HKWS1_file_list/raw",
+    "interval": 6,
+    "description": "Raw CCH data from /mnt/raid_sata/hongkong-cheungchau/level2/odim (via meteo@HKWS1 which is 192.168.185.84), checks for raw data at 6-minute intervals.",
+    "timezone": "HKT",
+    "has_maintenance": true
+  },
+  "CCH HKWS2 (raw)": {
+    "name": "CCH HKWS2 (raw)",
+    "type": "single",
+    "category": "Radar",
+    "data_source": "../CCH_HKWS2_file_list/raw",
+    "interval": 6,
+    "description": "Raw CCH data from /mnt/raid_sata/hongkong-cheungchau/level2/odim (via meteo@HKWS2 which is 192.168.185.86), checks for raw data at 6-minute intervals.",
+    "timezone": "HKT",
+    "has_maintenance": true
+  },
+  "Disdrometer": {
+    "name": "Disdrometer",
+    "type": "single",
+    "category": "Radar",
+    "data_source": "../disdrometer_file_list/1min_mean_rainrate_lite",
+    "interval": 5,
+    "description": "Distrometer > Rainfall rate (past 2 hrs) (Distrometer/1min_mean_rainrate_lite)",
+    "timezone": "HKT",
+    "has_maintenance": false
+  },
+  "SHW X-Band": {
+    "name": "SHW X-Band",
+    "type": "single",
+    "category": "Radar",
+    "data_source": "../XBAND_file_list/HKX_020_020.ppi_Velocity",
+    "interval": 5,
+    "description": "SHW > Real time > Velocity (Zoom in) > 2.0 deg (XBAND/HKX_020_020.ppi_Velocity)",
+    "timezone": "HKT",
+    "has_maintenance": false
+  },
+  "Internet": {
+    "name": "Internet",
+    "type": "single",
+    "category": "Radar",
+    "data_source": "Internet/256km_old",
+    "interval": 6,
+    "description": "Internet > 天氣雷達圖像 > COM 3km_R, 256km (Internet/256km_old) (every 6 minutes)",
+    "timezone": "HKT",
+    "has_maintenance": false
+  },
+  "H8/9": {
+    "name": "H8/9",
+    "type": "single",
+    "category": "Satellite",
+    "data_source": "H08_Fook/x4M_IR1",
+    "interval": 10,
+    "description": "Himawari-8/9 > x4M > x4M IR1 (H08_Fook/x4M_IR1) (every 10 minutes)",
+    "timezone": "UTC",
+    "has_maintenance": false 
+  },
+  "FY4B": {
+    "name": "FY4B",
+    "type": "single",
+    "category": "Satellite",
+    "data_source": "FY4B/IR1x4M",
+    "interval": 15,
+    "description": "FY4B > x4M (CMACast / KP) > IR1 (B13, 10.8μm) (FY4B/IR1x4M) (every 15 minutes)",
+    "timezone": "UTC",
+    "has_maintenance": false
+  },
+  "GK2A": {
+    "name": "GK2A",
+    "type": "single",
+    "category": "Satellite",
+    "data_source": "GK2A/IR_x2M",
+    "interval": 10,
+    "description": "GK2A-FD > x2M > IR1 (GK2A/IR_x2M) (every 10 minutes)",
+    "timezone": "UTC",
+    "has_maintenance": false
+  },
+  "Internet IR": {
+    "name": "Internet IR",
+    "type": "single",
+    "category": "Satellite",
+    "data_source": "Internet/H8_EasternAsia_IR",
+    "interval": 10,
+    "description": "Internet > Eastern Asia > IR (Internet/H8_EasternAsia_IR) (every 10 minutes)",
+    "timezone": "UTC",
+    "has_maintenance": true
+  },
+  "Internet IR (no maint)": {
+    "name": "Internet IR (no maint)",
+    "type": "single",
+    "category": "Satellite",
+    "data_source": "Internet/H8_EasternAsia_IR",
+    "interval": 10,
+    "description": "Internet > Eastern Asia > IR (Internet/H8_EasternAsia_IR) (every 10 minutes)",
+    "timezone": "UTC",
+    "has_maintenance": false 
+  },
+  "Internet TC": {
+    "name": "Internet TC",
+    "type": "single",
+    "category": "Satellite",
+    "data_source": "Internet/H8_EasternAsia_TC",
+    "interval": 10,
+    "description": "Internet > Eastern Asia > TC (Internet/H8_EasternAsia_TC) (every 10 minutes)",
+    "timezone": "UTC",
+    "has_maintenance": false
+  },
+  "Internet DC": {
+    "name": "Internet DC",
+    "type": "single",
+    "category": "Satellite",
+    "data_source": "Internet/H8_EasternAsia_DC",
+    "interval": 10,
+    "description": "Internet > Eastern Asia > DC (Internet/H8_EasternAsia_DC) (every 10 minutes)",
+    "timezone": "UTC",
+    "has_maintenance": false
+  },
+  "All-Day VISible": {
+    "name": "All-Day VISible",
+    "type": "single",
+    "category": "Satellite",
+    "data_source": "H8_knoweather/x1M-ext_advis",
+    "interval": 10,
+    "description": "Himawari-8/9 > x1M > All-Day VISible (ext) (H8_knoweather/x1M-ext_advis) (every 10 minutes)",
+    "timezone": "UTC",
+    "has_maintenance": false
+  },
+  "Aerowaves": {
+    "name": "Aerowaves",
+    "type": "single",
+    "category": "Satellite",
+    "data_source": "H8_knoweather/x1M-ext_aerowaves",
+    "interval": 10,
+    "description": "Himawari-8/9 > x1M > Aerowaves (ext) (H8_knoweather/x1M-ext_aerowaves) (every 10 minutes)",
+    "timezone": "UTC",
+    "has_maintenance": false
+  }
+}

@@ -1,0 +1,2473 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8" >
+  <meta name="viewport" content="width=device-width,initial-scale=1" >
+  <title>RadSat Maintenance Log</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 120 120%22><text x=%2260%22 y=%2290%22 font-size=%2290%22 text-anchor=%22middle%22>🔧</text></svg>">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* --- Base styles --- */
+    body { font-family: Arial, sans-serif; margin: 20px; background: #fff; color: #111; }
+    .container { max-width: 1600px; margin: 0 auto; }
+    .form-group { margin-bottom: 15px; display: flex; align-items: center; }
+    .header { text-align: left; margin-bottom: 15px; font-size: 1.5em; }
+    label { display: inline-block; width: 120px; }
+    input, select, textarea, button { padding: 6px; font-size: 0.9em; }
+    input, select, textarea { box-sizing: border-box; }
+    textarea { width: 300px; height: 100px; }
+    button { background-color: #2979ff; color: white; border: none; cursor: pointer; border-radius: 4px; }
+    button:hover { background-color: #1a68e6; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+
+    /* Tabs and header */
+    .header-container { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+    .tabs { display:flex; margin-bottom:20px; border-bottom:1px solid #ddd; }
+    .tab { padding:8px 16px; cursor:pointer; background:#f1f1f1; border:1px solid #ddd; border-bottom:none; margin-right:5px; font-size:0.9em;
+           /* slightly rounded top corners for each tab */
+           border-top-left-radius: 8px;
+           border-top-right-radius: 8px;
+         }
+    .tab.active { background:white; border-bottom:1px solid white; margin-bottom:-1px; }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+
+    /* Messages */
+    .message { margin:10px 0; padding:10px; border-radius:4px; display:none; }
+    .success-message { color:#00aa00; background:#f0fff0; border:1px solid #00aa00; }
+    .error-message { color:#ff4444; background:#fff0f0; border:1px solid #ff4444; }
+    .validation-message { color:#ff8800; background:#fff8f0; border:1px solid #ff8800; font-size:0.9em; }
+
+    /* Table - Fixed sticky header implementation */
+    .scrollable-table {
+      max-height: 600px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: white;
+      position: relative;
+    }
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin: 0;
+      font-size: 0.85em;
+      table-layout: fixed;
+    }
+    th, td {
+      border-right: 1px solid #ddd;
+      border-bottom: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+      overflow: hidden;
+      vertical-align: top;
+      box-sizing: border-box;
+    }
+    th:last-child, td:last-child {
+      border-right: none;
+    }
+    th {
+      background: #f8f9fa;
+      position: sticky !important;
+      top: 0;
+      z-index: 100;
+      border-top: none;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      font-weight: 600;
+    }
+    th:first-child {
+      border-left: none;
+      z-index: 101;
+    }
+    th:last-child {
+      z-index: 101;
+    }
+    .remarks-cell { white-space: normal; word-wrap: break-word; max-width: 300px; }
+
+    /* Sortable header styles */
+    .sortable-header {
+      cursor: pointer;
+      user-select: none;
+      position: relative;
+      padding-right: 20px !important;
+    }
+
+    .sortable-header:hover {
+      background-color: #e9ecef !important;
+    }
+
+    .sort-indicator {
+      position: absolute;
+      right: 4px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.7em;
+      color: #666;
+      opacity: 0.5;
+    }
+
+    .sort-indicator.active {
+      opacity: 1;
+      color: #2979ff;
+    }
+
+    .sortable-header:hover .sort-indicator {
+      opacity: 0.8;
+    }
+
+    /* Buttons */
+    .delete-btn { background-color: #ff4444; color: white; padding: 4px 6px; border-radius: 4px; border: none; cursor: pointer; font-size: 0.8em; margin-right: 4px; }
+    .delete-btn:hover { background-color: #cc0000; }
+    .delete-btn:disabled { background-color: #ccc; color: #666; cursor: not-allowed; }
+    .delete-btn:disabled:hover { background-color: #ccc; }
+    .edit-btn { background-color: #28a745; color: white; padding: 4px 6px; border-radius: 4px; border: none; cursor: pointer; font-size: 0.8em; margin-right: 4px; }
+    .edit-btn:hover { background-color: #218838; }
+    .edit-btn:disabled { background-color: #ccc; color: #666; cursor: not-allowed; }
+    .edit-btn:disabled:hover { background-color: #ccc; }
+    .copy-btn { background-color: #6c757d; color: white; padding: 4px 6px; border-radius: 4px; border: none; cursor: pointer; font-size: 0.8em; }
+    .copy-btn:hover { background-color: #5a6268; }
+    .action-btn { background-color: #6c757d; color: white; padding: 6px 10px; border-radius: 4px; border: none; cursor: pointer; font-size: 0.9em; }
+    .action-btn:hover { background-color: #5a6268; }
+
+    /* small util */
+    .button-group { display:flex; gap:8px; align-items:center; }
+    .nav-button { padding:6px 12px; background:#2979ff; color:#fff; border-radius:4px; text-decoration:none; display:inline-block; font-size:0.9em; }
+
+    /* Loading spinner */
+    .loading { display:inline-block; width:16px; height:16px; border:2px solid rgba(0,0,0,.25); border-radius:50%; border-top-color:#2979ff; animation:spin 1s linear infinite; margin-left:8px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Modal */
+    .modal { display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.4); }
+    .modal-content { background:#fff; margin:5% auto; padding:20px; width:90%; max-width:600px; border-radius:6px; box-shadow:0 6px 18px rgba(0,0,0,0.2); max-height:80vh; overflow-y:auto; }
+    .modal-title { margin:0 0 10px 0; }
+    .modal-input { width:100%; padding:8px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px; }
+    .modal-buttons { display:flex; justify-content:flex-end; gap:8px; margin-top:12px; }
+
+    /* User suggestions */
+    .user-input-container { position: relative; display:inline-block; }
+    .user-suggestions { position:absolute; top:100%; left:0; right:0; background:white; border:1px solid #ddd; max-height:150px; overflow-y:auto; z-index:200; display:none; }
+    .user-suggestion { padding:8px; cursor:pointer; border-bottom:1px solid #eee; }
+    .user-suggestion:hover { background:#f5f5f5; }
+    .user-suggestion.selected { background:#e3f2fd; }
+
+    /* ---------------- Three-row filter layout ---------------- */
+    .filters-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 14px;
+      box-shadow: 0 6px 18px rgba(16,24,40,0.06);
+      margin-bottom: 14px;
+    }
+
+    .row {
+      display: grid;
+      gap: 12px;
+      align-items: center;
+    }
+
+    /* Row 0 placed on top: Display times radios (now inline) */
+    .row.row-0 {
+      grid-template-columns: 1fr;
+      align-items: center;
+      margin-bottom: 15px; /* space between timezone row and filters */
+    }
+
+    /* Put radio buttons inline on one line */
+    .timezone-row {
+      display: flex;
+      flex-direction: row;
+      gap: 12px;
+      align-items: center;
+      margin-left: 0;
+    }
+
+    .timezone-row label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #333;
+    }
+
+    /* color radio-label spans blue when checked using adjacent selector */
+    .timezone-row label input:checked + span {
+      color: #2979ff;
+      font-weight: 700;
+    }
+
+    .timezone-row label input { margin: 0; }
+
+    .row.row-1 {
+      grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr auto;
+    }
+
+    .row.row-2 {
+      margin-top: 12px;
+      grid-template-columns: 1fr 160px;
+      align-items: center;
+    }
+
+    .filters-card label {
+      display:block;
+      font-size:13px;
+      color:#666;
+      margin-bottom:6px;
+    }
+
+    .control {
+      width:100%;
+      padding:8px 10px;
+      border-radius:8px;
+      border:1px solid #e3e7ee;
+      background:#fff;
+      font-size:14px;
+      color:#0f1724;
+      box-sizing:border-box;
+    }
+
+    .small-inline { display:flex; gap:8px; align-items:center; }
+
+    .reset-btn, .copy-all-btn {
+      background: #6c757d;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      padding:9px 12px;
+      border-radius:8px;
+      white-space:nowrap;
+      font-weight:600;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+      font-size: 0.9em;
+      margin-top: 6px;
+    }
+    .reset-btn:hover, .copy-all-btn:hover { background:#5a6268; }
+
+    .copy-all-btn {
+      background: #17a2b8;
+    }
+    .copy-all-btn:hover {
+      background: #138496;
+    }
+
+    /* Refresh button styling */
+    .refresh-btn {
+      background: #17a2b8 !important;
+    }
+    .refresh-btn:hover {
+      background: #138496 !important;
+    }
+    .refresh-btn:disabled {
+      background: #95d5e0 !important;
+      cursor: not-allowed !important;
+    }
+
+    .radios { display:flex; gap:8px; align-items:center; padding-top:6px; }
+
+    input[type="radio"] { width:12px; height:12px; }
+
+    /* Responsive adjustments */
+    @media (max-width: 1200px) {
+      .row.row-1 { grid-template-columns: repeat(3, 1fr); }
+      .row.row-2 { grid-template-columns: 1fr 1fr; }
+      #maintenanceTable th:nth-child(7), #maintenanceTable td:nth-child(7) { width: 240px; }
+    }
+
+    @media (max-width: 560px) {
+      .row.row-0, .row.row-1, .row.row-2 { grid-template-columns: 1fr; }
+      label { font-size: 13px; }
+      table { font-size: 0.82em; }
+    }
+
+    /* Fixed column widths for table */
+    #maintenanceTable th:nth-child(1), #maintenanceTable td:nth-child(1) { width: 35px; }
+    #maintenanceTable th:nth-child(2), #maintenanceTable td:nth-child(2) { width: 80px; }
+    #maintenanceTable th:nth-child(3), #maintenanceTable td:nth-child(3) { width: 160px; }
+    #maintenanceTable th:nth-child(4), #maintenanceTable td:nth-child(4) { width: 150px; }
+    #maintenanceTable th:nth-child(5), #maintenanceTable td:nth-child(5) { width: 150px; }
+    #maintenanceTable th:nth-child(6), #maintenanceTable td:nth-child(6) { width: 100px; }
+    #maintenanceTable th:nth-child(7), #maintenanceTable td:nth-child(7) { width: 300px; }
+    #maintenanceTable th:nth-child(8), #maintenanceTable td:nth-child(8) { width: 180px; }
+
+    /* small timezone label in headers */
+    .hkt-indicator { font-size: 0.85em; color: #2979ff; font-weight: 700; margin-left: 6px; }
+
+    /* ----- Add-tab specific styling to align with View Events and reduce select widths ----- */
+    .add-form {
+      max-width: 720px;
+      margin-top: 6px;
+
+      /* move form a bit to the right */
+      margin-left: 40px;
+    }
+    .add-form .control { width: 240px; }
+    .add-form input[type="datetime-local"] { width: 240px; }
+    .add-form textarea { width: 420px; }
+    .add-form .user-input-container { width: 240px; }
+
+    /* place datetime input and timezone inline */
+    .add-form .form-group { flex-direction: column; align-items: flex-start; }
+    .add-form .form-group label {
+      display: block;
+      width: auto;
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 6px;
+    }
+
+    /* only for datetime rows: inline input + timezone */
+    .datetime-control { display:flex; align-items:center; gap:8px; }
+    .datetime-control .timezone-indicator { margin-left: 0; }
+
+    /* place the inclusive-note directly under the start picker and align with the picker */
+    .time-inclusive-note {
+      font-size: 0.75em;
+      color: #888;
+      font-style: italic;
+      margin-top: 6px;
+      margin-left: 0; /* aligns with the input since label is above */
+    }
+
+    /* align the Add Event button with the pickers (no large margin-left) */
+    .add-form .button-group {
+      margin-left: 0;
+      margin-top: 8px;
+      justify-content: flex-start;
+    }
+
+    /* Add-tab timezone indicator neutral style + selected style */
+    .timezone-indicator { font-size: 0.85em; color: #666; margin-left: 6px; font-weight: 600; }
+    .timezone-selected { color: #2979ff !important; font-weight: 700 !important; }
+
+    /* Slightly adjust controls spacing in add form so alignment looks consistent */
+    .add-form .form-group .control,
+    .add-form .form-group input,
+    .add-form .form-group textarea {
+      margin: 0 0 6px 0;
+    }
+
+    /* Action buttons container */
+    .action-buttons {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    /* Edit Modal specific styles */
+    .edit-modal .modal-content {
+      width: 95%;
+      max-width: 700px;
+    }
+
+    .edit-form .form-group {
+      margin-bottom: 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .edit-form label {
+      display: block;
+      width: auto;
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 6px;
+    }
+
+    .edit-form .control,
+    .edit-form input,
+    .edit-form select,
+    .edit-form textarea {
+      width: 100%;
+      max-width: 400px;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+
+    .edit-form textarea {
+      height: 140px;
+      resize: vertical;
+    }
+
+    /* Copy notification */
+    .copy-notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #28a745;
+      color: white;
+      padding: 10px 15px;
+      border-radius: 4px;
+      z-index: 2000;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .copy-notification.show {
+      opacity: 1;
+    }
+
+    /* Center notification */
+    .center-notification {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #28a745;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 6px;
+      z-index: 3000;
+      opacity: 0;
+      transition: all 0.3s ease;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+      min-width: 200px;
+      text-align: center;
+    }
+
+    .center-notification.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.02);
+    }
+
+    .center-notification.success {
+      background: #28a745;
+    }
+
+    .center-notification.error {
+      background: #dc3545;
+    }
+
+    /* Event type badge styles */
+    .event-type-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.85em;
+      font-weight: 600;
+      line-height: 1.4;
+      white-space: nowrap;
+    }
+    .badge-preventive {
+      background: #e8f5e9;
+      color: #228B22;
+      border: 1px solid #a5d6a7;
+    }
+    .badge-corrective {
+      background: #f0f0f0;
+      color: #606060;
+      border: 1px solid #d0d0d0;
+    }
+    .badge-other {
+      background: #f7f7f7;
+      color: #909090;
+      border: 1px solid #e0e0e0;
+    }
+    .badge-restoration {
+      background: #e3eaf5;
+      color: #2a5fb0;
+      border: 1px solid #b3c7e6;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-container">
+      <div>
+        <h1 class="header">Radar and Satellite Maintenance Log</h1>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <a href="radsat_availability.html" target="_blank" rel="noopener noreferrer" class="nav-button" aria-label="Open Availability in new tab" style="transition: transform 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">📡🛰️ Availability</a>
+        <a href="maintenance.html" class="nav-button" style="background-color: #0b63c6; color: white; transition: transform 0.2s ease;" aria-label="Current page" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">🔧 Maintenance</a>
+        <a href="quarterly_report.html" target="_blank" rel="noopener noreferrer" class="nav-button" aria-label="Open Quarterly Report in new tab" style="transition: transform 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">📊 Quarterly Report</a>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="view">Event Log</div>
+      <div class="tab" data-tab="add">New Event</div>
+    </div>
+
+    <!-- VIEW TAB -->
+    <div id="viewTab" class="tab-content active">
+      <section class="filters-card" aria-label="Filters and timezone selection">
+        <form id="filtersForm" aria-describedby="filterDesc">
+          <div id="filterDesc" style="display:none">Use these controls to filter maintenance events and choose whether times are shown in HKT or UTC.</div>
+
+          <!-- Row 0: Display times radios (inline) -->
+          <div class="row row-0" role="group" aria-label="Timezone selection top">
+            <div class="timezone-row" aria-label="Display times in">
+              <label for="displayHKT">
+                <input type="radio" id="displayHKT" name="timezoneDisplay" value="HKT" checked>
+                <span>HKT</span>
+              </label>
+
+              <label for="displayUTC">
+                <input type="radio" id="displayUTC" name="timezoneDisplay" value="UTC">
+                <span>UTC</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Row 1: filters in new order: Image Type, Year, Quarter, Month, Event Type, User -->
+          <div class="row row-1" role="group" aria-label="Primary filters">
+            <div>
+              <label for="filterStation">Image Type</label>
+              <select id="filterStation" name="filterStation" class="control">
+                <option value="all">All Image Types</option>
+                <option value="Radar" selected>All Radar</option>
+                <option value="Satellite">All Satellite</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="filterYear">Year</label>
+              <select id="filterYear" name="filterYear" class="control">
+                <option value="all">All Years</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="filterQuarter">Quarter</label>
+              <select id="filterQuarter" name="filterQuarter" class="control">
+                <option value="all">All Quarters</option>
+                <option value="1">Q1 (Jan--Mar)</option>
+                <option value="2">Q2 (Apr--Jun)</option>
+                <option value="3">Q3 (Jul--Sep)</option>
+                <option value="4">Q4 (Oct--Dec)</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="filterMonth">Month</label>
+              <select id="filterMonth" name="filterMonth" class="control">
+                <option value="all">All Months</option>
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="filterType">Event Type</label>
+              <select id="filterType" name="filterType" class="control">
+                <option value="all">All Event Types</option>
+                <optgroup label="Maintenance">
+                  <option value="Preventive Maintenance">Preventive Maintenance</option>
+                  <option value="Corrective Maintenance">Corrective Maintenance</option>
+                  <option value="Other">Other</option>
+                </optgroup>
+                <optgroup label="Data Restoration">
+                  <option value="Data Restoration">Data Restoration</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <div>
+              <label for="filterUser">User</label>
+              <input id="filterUser" name="filterUser" type="text" placeholder="Search by user name" class="control" >
+            </div>
+
+            <div class="small-inline" aria-hidden="false">
+              <label style="visibility:hidden; height:0; margin:0;">Actions</label>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" id="refreshData" class="reset-btn refresh-btn" aria-label="Refresh data">
+                  <span id="refreshIcon"><i class="fas fa-sync-alt"></i> Refresh</span>
+                  <span id="refreshSpinner" class="loading" style="display:none; margin:0;"></span>
+                </button>
+                <button type="button" id="resetFilters" class="reset-btn" aria-label="Reset filters">Reset Filters</button>
+              </div>
+            </div>
+          </div>
+
+
+        </form>
+      </section>
+
+      <section class="scrollable-table">
+        <table id="maintenanceTable" aria-live="polite">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th class="sortable-header" data-column="station">Image Type <span class="sort-indicator">↕</span></th>
+              <th class="sortable-header" data-column="type">Event Type <span class="sort-indicator">↕</span></th>
+              <th class="sortable-header" data-column="startDate">Start time <span id="startHeaderTZ" class="hkt-indicator">HKT</span> <span class="sort-indicator">↕</span></th>
+              <th class="sortable-header" data-column="endDate">End time <span id="endHeaderTZ" class="hkt-indicator">HKT</span> <span class="sort-indicator">↕</span></th>
+              <th class="sortable-header" data-column="user">User <span class="sort-indicator">↕</span></th>
+              <th class="sortable-header" data-column="remarks">Remarks <span class="sort-indicator">↕</span></th>
+              <th>Actions <button type="button" id="copyAllEvents" class="copy-all-btn" style="margin-left: 8px; padding: 4px 8px; font-size: 0.8em;" aria-label="Copy all events"><i class="fas fa-copy"></i> Copy All</button></th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Filled by displayMaintenanceData() -->
+          </tbody>
+        </table>
+      </section>
+
+      <div id="loadingData" style="text-align:center; margin:20px 0;">
+        <span class="loading"></span> Loading maintenance data...
+      </div>
+    </div>
+
+    <!-- ADD TAB -->
+    <div id="addTab" class="tab-content">
+      <form id="maintenanceForm" class="add-form" aria-label="Add Maintenance Form">
+        <div class="form-group">
+          <label for="station">Image Type:</label>
+          <select id="station" name="station" required class="control">
+            <option value="">Select Image Type</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="type">Event Type:</label>
+          <select id="type" name="type" required class="control">
+            <option value="">Select Event Type</option>
+            <optgroup label="Maintenance">
+              <option value="Preventive Maintenance">Preventive Maintenance</option>
+              <option value="Corrective Maintenance">Corrective Maintenance</option>
+              <option value="Other">Other</option>
+            </optgroup>
+            <optgroup label="Data Restoration">
+              <option value="Data Restoration">Data Restoration</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="form-group datetime-group">
+          <label for="startDate">Start time:</label>
+          <div class="datetime-control">
+            <input type="datetime-local" id="startDate" name="startDate" required>
+            <span id="startTimezone" class="timezone-indicator">HKT</span>
+          </div>
+          <div class="time-inclusive-note">Time period is inclusive (includes both start and end times)</div>
+          <div id="startDateError" class="message validation-message"></div>
+        </div>
+
+        <div class="form-group datetime-group">
+          <label for="endDate">End time:</label>
+          <div class="datetime-control">
+            <input type="datetime-local" id="endDate" name="endDate" required>
+            <span id="endTimezone" class="timezone-indicator">HKT</span>
+          </div>
+          <div id="endDateError" class="message validation-message"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="user">User:</label>
+          <div class="user-input-container">
+            <input type="text" id="user" name="user" required placeholder="Enter user name" autocomplete="off" class="control">
+            <datalist id="userSuggestions"></datalist>
+            <div id="userDropdown" class="user-suggestions"></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="remarks">Remarks:</label>
+	  <textarea id="remarks" name="remarks" required style="height: 160px; width: 500px;"></textarea>
+        </div>
+
+        <div id="formError" class="message error-message"></div>
+        <div id="formSuccess" class="message success-message"></div>
+
+        <div class="button-group">
+          <button type="submit" id="submitBtn" style="width: 140px;">Add Event <span id="submitSpinner" class="loading" style="display:none;"></span></button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Password Modal -->
+  <div id="passwordModal" class="modal">
+    <div class="modal-content">
+      <h3 class="modal-title">Please log in first (RadopXXXX):</h3>
+      <input type="password" id="passwordInput" class="modal-input" placeholder="Password">
+      <div id="passwordError" class="modal-error">Incorrect password. Please try again.</div>
+      <div class="modal-buttons">
+        <button id="cancelPassword" class="modal-btn modal-btn-secondary" style="padding:6px 10px; background:#6c757d; color:white; border-radius:4px;">Cancel</button>
+        <button id="submitPassword" class="modal-btn modal-btn-primary" style="padding:6px 10px; background:#2979ff; color:white; border-radius:4px;">Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Modal -->
+  <div id="editModal" class="modal edit-modal">
+    <div class="modal-content">
+      <h3 class="modal-title">Edit Maintenance</h3>
+      <form id="editForm" class="edit-form">
+        <input type="hidden" id="editEventId">
+
+        <div class="form-group">
+          <label for="editStation">Image Type:</label>
+          <select id="editStation" name="station" required class="control">
+            <option value="">Select Image Type</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="editType">Event Type:</label>
+          <select id="editType" name="type" required class="control">
+            <option value="">Select Event Type</option>
+            <optgroup label="Maintenance">
+              <option value="Preventive Maintenance">Preventive Maintenance</option>
+              <option value="Corrective Maintenance">Corrective Maintenance</option>
+              <option value="Other">Other</option>
+            </optgroup>
+            <optgroup label="Data Restoration">
+              <option value="Data Restoration">Data Restoration</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="editStartDate">Start time:</label>
+          <div class="datetime-control">
+            <input type="datetime-local" id="editStartDate" name="startDate" required>
+            <span id="editStartTimezone" class="timezone-indicator">HKT</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="editEndDate">End time:</label>
+          <div class="datetime-control">
+            <input type="datetime-local" id="editEndDate" name="endDate" required>
+            <span id="editEndTimezone" class="timezone-indicator">HKT</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="editUser">User:</label>
+          <input type="text" id="editUser" name="user" required placeholder="Enter user name" class="control">
+        </div>
+
+        <div class="form-group">
+          <label for="editRemarks">Remarks:</label>
+          <textarea id="editRemarks" name="remarks" required class="control"></textarea>
+        </div>
+
+        <div id="editFormError" class="message error-message"></div>
+
+        <div class="modal-buttons">
+          <button type="button" id="cancelEdit" class="modal-btn modal-btn-secondary" style="padding:8px 12px; background:#6c757d; color:white; border-radius:4px;">Cancel</button>
+          <button type="submit" id="saveEdit" class="modal-btn modal-btn-primary" style="padding:8px 12px; background:#28a745; color:white; border-radius:4px;">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Copy notification -->
+  <div id="copyNotification" class="copy-notification">
+    Copied to clipboard!
+  </div>
+
+  <!-- Center notification -->
+  <div id="centerNotification" class="center-notification">
+    Success message
+  </div>
+
+  <script>
+    // In-memory storage (localStorage not available in iframe)
+    var memoryStore = {};
+
+    // Global variables
+    let allMaintenanceData = [];
+    let filteredMaintenanceData = [];
+    let userList = [];
+    let stationsConfig = {};
+    let isAuthenticated = false;
+    let pendingAction = null;
+    let selectedSuggestionIndex = -1;
+    let currentInputTimezone = 'HKT'; // Track current input timezone (Add-tab)
+    let currentDisplayTimezone = 'HKT'; // Track current display timezone (View-tab)
+    let isDataLoaded = false; // Track if data has been loaded
+
+    // Sorting variables
+    let currentSortColumn = 'startDate'; // Default sort column
+    let currentSortDirection = 'asc'; // Default sort direction (asc = oldest first)
+
+    // Hardcoded default config - keep in sync with availability page
+    const DEFAULT_CONFIG = 'radsat_availability_json/radsat_image.json';
+
+    // DOM elements
+    const passwordModal = document.getElementById('passwordModal');
+    const passwordInput = document.getElementById('passwordInput');
+    const passwordError = document.getElementById('passwordError');
+    const submitPassword = document.getElementById('submitPassword');
+    const cancelPassword = document.getElementById('cancelPassword');
+    const userInput = document.getElementById('user');
+    const userDropdown = document.getElementById('userDropdown');
+    const stationSelect = document.getElementById('station');
+    const editStationSelect = document.getElementById('editStation');
+    const startTimezoneIndicator = document.getElementById('startTimezone');
+    const endTimezoneIndicator = document.getElementById('endTimezone');
+    const filterStationSelect = document.getElementById('filterStation');
+    const displayHKTRadio = document.getElementById('displayHKT');
+    const displayUTCRadio = document.getElementById('displayUTC');
+    const editModal = document.getElementById('editModal');
+    const copyNotification = document.getElementById('copyNotification');
+    const centerNotification = document.getElementById('centerNotification');
+
+    // Event type badge helper
+    function formatEventTypeBadge(type) {
+      var badgeClass = 'badge-other';
+      var label = type || 'N/A';
+      switch (type) {
+        case 'Preventive Maintenance': badgeClass = 'badge-preventive'; break;
+        case 'Corrective Maintenance': badgeClass = 'badge-corrective'; break;
+        case 'Data Restoration':       badgeClass = 'badge-restoration'; break;
+        case 'Other':                  badgeClass = 'badge-other'; break;
+      }
+      return '<span class="event-type-badge ' + badgeClass + '">' + label + '</span>';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.documentElement.lang = 'en-US';
+        document.querySelectorAll('input[type="datetime-local"]').forEach(function(i) { i.setAttribute('lang','en-US'); });
+
+        checkSessionExpiry();
+        setupTabs();
+        loadUserList();
+        loadStationsConfig();
+        setupDateTimeInputs();
+        populateYearFilter();
+        setDefaultYearAndQuarter(); // Set defaults before loading data
+        setupEventListeners();
+        setupUserInput();
+        setupStationChangeListener();
+        setupTimezoneDisplayListeners();
+        setupEditModal();
+        setupCopyAllEvents();
+        setupColumnSorting(); // Add sorting functionality
+
+        updateDisplayTimezoneBasedOnFilter();
+        updateTableHeaderTimezones();
+        updateAddTimezoneStyles();
+
+        // Load data after filters are properly set
+        loadMaintenanceData();
+
+        // Parse URL parameters and populate form
+        var urlParams = parseURLParameters();
+        if (urlParams.config) {
+            console.log('Config parameter received:', urlParams.config);
+            // Currently hardcoded, but logged for future use
+        }
+        if (Object.keys(urlParams).length > 0) {
+            // Wait for stations config to load before populating
+            var checkStationsLoaded = setInterval(function() {
+                if (Object.keys(stationsConfig).length > 0) {
+                    clearInterval(checkStationsLoaded);
+                    populateFormFromURL(urlParams);
+                }
+            }, 100);
+        }
+    });
+
+    // Setup column sorting
+    function setupColumnSorting() {
+      document.querySelectorAll('.sortable-header').forEach(function(header) {
+        header.addEventListener('click', function() {
+          var column = this.getAttribute('data-column');
+          if (currentSortColumn === column) {
+            // Toggle direction if same column
+            currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+          } else {
+            // New column, default to ascending for all columns
+            currentSortColumn = column;
+            currentSortDirection = 'asc';
+          }
+
+          updateSortIndicators();
+          sortAndDisplayData();
+        });
+      });
+
+      // Set initial sort indicators
+      updateSortIndicators();
+    }
+
+    // Update sort indicators to show current sort state
+    function updateSortIndicators() {
+      document.querySelectorAll('.sort-indicator').forEach(function(indicator) {
+        indicator.classList.remove('active');
+        indicator.textContent = '↕';
+      });
+
+      var activeHeader = document.querySelector('[data-column="' + currentSortColumn + '"] .sort-indicator');
+      if (activeHeader) {
+        activeHeader.classList.add('active');
+        activeHeader.textContent = currentSortDirection === 'asc' ? '↑' : '↓';
+      }
+    }
+
+    // Sort and display data
+    function sortAndDisplayData() {
+      if (!filteredMaintenanceData || filteredMaintenanceData.length === 0) {
+        displayMaintenanceData([]);
+        return;
+      }
+
+      var sortedData = filteredMaintenanceData.slice().sort(function(a, b) {
+        var aValue, bValue;
+
+        switch (currentSortColumn) {
+          case 'index':
+            return 0;
+
+          case 'station':
+            aValue = stationsConfig[a.station] ? stationsConfig[a.station].name : a.station;
+            bValue = stationsConfig[b.station] ? stationsConfig[b.station].name : b.station;
+            break;
+
+          case 'type':
+            aValue = a.type || '';
+            bValue = b.type || '';
+            break;
+
+          case 'startDate':
+          case 'endDate':
+            var aDate, bDate;
+            if (currentDisplayTimezone === 'UTC') {
+              aDate = new Date(convertHKTToUTCForDisplay(a[currentSortColumn]));
+              bDate = new Date(convertHKTToUTCForDisplay(b[currentSortColumn]));
+            } else {
+              aDate = new Date(a[currentSortColumn]);
+              bDate = new Date(b[currentSortColumn]);
+            }
+            return currentSortDirection === 'asc' ? aDate - bDate : bDate - aDate;
+
+          case 'user':
+            aValue = a.user || '';
+            bValue = b.user || '';
+            break;
+
+          case 'remarks':
+            aValue = a.remarks || '';
+            bValue = b.remarks || '';
+            break;
+
+          default:
+            return 0;
+        }
+
+        // String comparison
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          var comparison = aValue.toLowerCase().localeCompare(bValue.toLowerCase());
+          return currentSortDirection === 'asc' ? comparison : -comparison;
+        }
+
+        // Fallback comparison
+        if (aValue < bValue) return currentSortDirection === 'asc' ? -1 : 1;
+        if (aValue > bValue) return currentSortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+
+      displayMaintenanceData(sortedData);
+    }
+
+    // Helper function to ensure filters are set before applying them
+    function ensureDefaultFiltersSet() {
+      var yearSelect = document.getElementById('filterYear');
+      var quarterSelect = document.getElementById('filterQuarter');
+
+      if (yearSelect.value === 'all' || !yearSelect.value) {
+        var currentYear = new Date().getFullYear();
+        var yearOptions = Array.prototype.slice.call(yearSelect.options);
+        if (yearOptions.some(function(opt) { return opt.value === currentYear.toString(); })) {
+          yearSelect.value = currentYear.toString();
+        }
+      }
+
+      if (quarterSelect.value === 'all' || !quarterSelect.value) {
+        var currentMonth = new Date().getMonth() + 1;
+        var currentQuarter;
+        if (currentMonth <= 3) currentQuarter = 1;
+        else if (currentMonth <= 6) currentQuarter = 2;
+        else if (currentMonth <= 9) currentQuarter = 3;
+        else currentQuarter = 4;
+        quarterSelect.value = currentQuarter.toString();
+      }
+    }
+
+    // Setup station change listener for timezone updates
+    function setupStationChangeListener() {
+      stationSelect.addEventListener('change', function() {
+        updateTimezoneIndicators();
+        updateAddTimezoneStyles();
+      });
+
+      editStationSelect.addEventListener('change', function() {
+        updateEditTimezoneIndicators();
+      });
+    }
+
+    // Setup timezone display radio button listeners
+    function setupTimezoneDisplayListeners() {
+      displayHKTRadio.addEventListener('change', function() {
+        if (this.checked) {
+          currentDisplayTimezone = 'HKT';
+          if (isDataLoaded) {
+            applyFilters();
+          }
+          updateTableHeaderTimezones();
+          updateAddTimezoneStyles();
+        }
+      });
+
+      displayUTCRadio.addEventListener('change', function() {
+        if (this.checked) {
+          currentDisplayTimezone = 'UTC';
+          if (isDataLoaded) {
+            applyFilters();
+          }
+          updateTableHeaderTimezones();
+          updateAddTimezoneStyles();
+        }
+      });
+    }
+
+    // Update the small TZ shown in table headers
+    function updateTableHeaderTimezones() {
+      var startHdr = document.getElementById('startHeaderTZ');
+      var endHdr = document.getElementById('endHeaderTZ');
+      if (!startHdr || !endHdr) return;
+      startHdr.textContent = currentDisplayTimezone;
+      endHdr.textContent = currentDisplayTimezone;
+    }
+
+    // Update the Add-tab timezone indicator texts based on selected station
+    function updateTimezoneIndicators() {
+      var selectedStation = stationSelect.value;
+      if (selectedStation && stationsConfig[selectedStation]) {
+        currentInputTimezone = stationsConfig[selectedStation].timezone || 'HKT';
+      } else {
+        currentInputTimezone = 'HKT';
+      }
+      startTimezoneIndicator.textContent = currentInputTimezone;
+      endTimezoneIndicator.textContent = currentInputTimezone;
+    }
+
+    // Update edit modal timezone indicators
+    function updateEditTimezoneIndicators() {
+      var selectedStation = editStationSelect.value;
+      var timezone = 'HKT';
+      if (selectedStation && stationsConfig[selectedStation]) {
+        timezone = stationsConfig[selectedStation].timezone || 'HKT';
+      }
+      document.getElementById('editStartTimezone').textContent = timezone;
+      document.getElementById('editEndTimezone').textContent = timezone;
+    }
+
+    // Set .timezone-selected on Add-tab indicators so they remain blue
+    function updateAddTimezoneStyles() {
+      if (!startTimezoneIndicator || !endTimezoneIndicator) return;
+      [startTimezoneIndicator, endTimezoneIndicator].forEach(function(span) {
+        span.classList.add('timezone-selected');
+      });
+    }
+
+    // Convert UTC input to HKT for storage (HKT = UTC + 8)
+    function convertUTCToHKT(utcDateTimeString) {
+      var utcDate = new Date(utcDateTimeString + "Z");
+      var hktDate = new Date(utcDate.getTime() + (8 * 60 * 60 * 1000));
+      return hktDate.toISOString().slice(0, 16);
+    }
+
+    // Convert HKT stored time to UTC for display (UTC = HKT - 8)
+    function convertHKTToUTCForDisplay(hktDateTimeString) {
+      var hktDate = new Date(hktDateTimeString + "Z");
+      var utcDate = new Date(hktDate.getTime() - (8 * 60 * 60 * 1000));
+      return utcDate.toISOString().slice(0, 19);
+    }
+
+    // Setup user suggestions
+    function setupUserInput() {
+      userInput.addEventListener('input', function() {
+        var value = this.value.toLowerCase().trim();
+        var suggestions = userList.filter(function(user) { return user.toLowerCase().includes(value) && value.length > 0; });
+        showUserSuggestions(suggestions);
+      });
+
+      userInput.addEventListener('keydown', function(e) {
+        var suggestions = userDropdown.querySelectorAll('.user-suggestion');
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          selectedSuggestionIndex = Math.min(selectedSuggestionIndex + 1, suggestions.length - 1);
+          updateSuggestionSelection();
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          selectedSuggestionIndex = Math.max(selectedSuggestionIndex - 1, -1);
+          updateSuggestionSelection();
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (selectedSuggestionIndex >= 0 && suggestions[selectedSuggestionIndex]) {
+            selectUserSuggestion(suggestions[selectedSuggestionIndex].textContent);
+          }
+        } else if (e.key === 'Escape') {
+          hideUserSuggestions();
+        }
+      });
+
+      userInput.addEventListener('blur', function() {
+        setTimeout(function() { hideUserSuggestions(); }, 150);
+      });
+
+      userInput.addEventListener('focus', function() {
+        if (this.value.trim()) {
+          var value = this.value.toLowerCase().trim();
+          var suggestions = userList.filter(function(user) { return user.toLowerCase().includes(value); });
+          showUserSuggestions(suggestions);
+        }
+      });
+    }
+
+    function showUserSuggestions(suggestions) {
+      userDropdown.innerHTML = '';
+      selectedSuggestionIndex = -1;
+      if (suggestions.length === 0) { userDropdown.style.display = 'none'; return; }
+      suggestions.forEach(function(s) {
+        var div = document.createElement('div');
+        div.className = 'user-suggestion';
+        div.textContent = s;
+        div.addEventListener('click', function() { selectUserSuggestion(s); });
+        userDropdown.appendChild(div);
+      });
+      userDropdown.style.display = 'block';
+    }
+    function hideUserSuggestions() { userDropdown.style.display = 'none'; selectedSuggestionIndex = -1; }
+    function selectUserSuggestion(suggestion) { userInput.value = suggestion; hideUserSuggestions(); }
+    function updateSuggestionSelection() {
+      var suggestions = userDropdown.querySelectorAll('.user-suggestion');
+      suggestions.forEach(function(s, i) { s.classList.toggle('selected', i === selectedSuggestionIndex); });
+    }
+
+    // Session handling
+    function checkSessionExpiry() {
+      var expiryTime = parseInt(memoryStore['authExpiry']);
+      var wasAuthenticated = isAuthenticated;
+      isAuthenticated = memoryStore['isAuthenticated'] === 'true' && Date.now() < expiryTime;
+      if (wasAuthenticated && !isAuthenticated) {
+        delete memoryStore['isAuthenticated'];
+        delete memoryStore['authExpiry'];
+      }
+      return isAuthenticated;
+    }
+
+    // Load stations config
+    async function loadStationsConfig(filename = DEFAULT_CONFIG) {
+      try {
+        var response = await fetch(filename);
+        if (!response.ok) throw new Error('Failed to load stations config');
+        stationsConfig = await response.json();
+        populateStationDropdowns();
+      } catch (error) {
+        console.error('Error loading stations config:', error);
+        // Fallback
+        stationsConfig = {
+          "TMS (raw)": { "name":"TMS (raw)", "category":"Radar", "has_maintenance": true, "timezone":"HKT" },
+          "TCR (raw)": { "name":"TCR (raw)", "category":"Radar", "has_maintenance": true, "timezone":"HKT" },
+          "Internet IR": { "name":"Internet IR", "category":"Satellite", "has_maintenance": true, "timezone":"UTC" },
+        };
+        populateStationDropdowns();
+      }
+    }
+
+    function populateStationDropdowns() {
+      var categorizedStations = {};
+      Object.keys(stationsConfig).forEach(function(key) {
+        var station = stationsConfig[key];
+        if (station.has_maintenance) {
+          var category = station.category || 'Other';
+          if (!categorizedStations[category]) categorizedStations[category] = [];
+          categorizedStations[category].push({ key:key, name: station.name });
+        }
+      });
+
+      // Populate Add Event dropdown (station)
+      var stationDropdown = document.getElementById('station');
+      while (stationDropdown.options.length > 1) stationDropdown.remove(1);
+      Object.keys(categorizedStations).sort().forEach(function(category) {
+        var optgroup = document.createElement('optgroup');
+        optgroup.label = category;
+        categorizedStations[category].forEach(function(st) {
+          var option = document.createElement('option');
+          option.value = st.key;
+          option.textContent = st.name;
+          optgroup.appendChild(option);
+        });
+        stationDropdown.appendChild(optgroup);
+      });
+
+      // Populate Edit Event dropdown
+      var editStationDropdown = document.getElementById('editStation');
+      while (editStationDropdown.options.length > 1) editStationDropdown.remove(1);
+      Object.keys(categorizedStations).sort().forEach(function(category) {
+        var optgroup = document.createElement('optgroup');
+        optgroup.label = category;
+        categorizedStations[category].forEach(function(st) {
+          var option = document.createElement('option');
+          option.value = st.key;
+          option.textContent = st.name;
+          optgroup.appendChild(option);
+        });
+        editStationDropdown.appendChild(optgroup);
+      });
+
+      // Populate filterStation with individual stations grouped
+      var filterDropdown = document.getElementById('filterStation');
+      // keep first three default options (All Image Types, All Radar, All Satellite)
+      while (filterDropdown.options.length > 3) filterDropdown.remove(3);
+      Object.keys(categorizedStations).sort().forEach(function(category) {
+        var optgroup = document.createElement('optgroup');
+        optgroup.label = category;
+        categorizedStations[category].forEach(function(st) {
+          var option = document.createElement('option');
+          option.value = st.key;
+          option.textContent = st.name;
+          optgroup.appendChild(option);
+        });
+        filterDropdown.appendChild(optgroup);
+      });
+    }
+
+    // Tabs
+    function setupTabs() {
+      document.querySelectorAll('.tab').forEach(function(tab) {
+        tab.addEventListener('click', function() {
+          var self = this;
+          document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+          document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+          self.classList.add('active');
+          document.getElementById(self.getAttribute('data-tab') + 'Tab').classList.add('active');
+
+          if (self.getAttribute('data-tab') === 'add') {
+            updateTimezoneIndicators();
+            updateAddTimezoneStyles();
+          }
+          else if (self.getAttribute('data-tab') === 'view') {
+            setTimeout(function() {
+              updateDisplayTimezoneBasedOnFilter();
+              updateTableHeaderTimezones();
+              if (isDataLoaded && allMaintenanceData.length >= 0) {
+                ensureDefaultFiltersSet();
+                applyFilters();
+              }
+            }, 50);
+          }
+        });
+      });
+    }
+
+    function setupEventListeners() {
+      // Filters
+      filterStationSelect.addEventListener('change', function() {
+        updateDisplayTimezoneBasedOnFilter();
+        if (isDataLoaded) {
+          applyFilters();
+        }
+      });
+      document.getElementById('filterType').addEventListener('change', function() {
+        if (isDataLoaded) applyFilters();
+      });
+      document.getElementById('filterUser').addEventListener('input', function() {
+        if (isDataLoaded) applyFilters();
+      });
+      document.getElementById('filterYear').addEventListener('change', function() {
+        if (isDataLoaded) applyFilters();
+      });
+      document.getElementById('filterMonth').addEventListener('change', function() {
+        if (isDataLoaded) applyFilters();
+      });
+      document.getElementById('filterQuarter').addEventListener('change', function() {
+        updateMonthFilterBasedOnQuarter();
+        if (isDataLoaded) applyFilters();
+      });
+      document.getElementById('resetFilters').addEventListener('click', function(){ resetFilters(); });
+      document.getElementById('refreshData').addEventListener('click', function(){ refreshData(); });
+
+      // Date validation
+      document.getElementById('startDate').addEventListener('change', validateTimeInputs);
+      document.getElementById('endDate').addEventListener('change', validateTimeInputs);
+
+      // Prevent Enter key from submitting forms unless it's from submit button
+      document.getElementById('maintenanceForm').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && e.target.type !== 'submit' && e.target.tagName !== 'BUTTON') {
+          e.preventDefault();
+        }
+      });
+
+      document.getElementById('filtersForm').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && e.target.type !== 'submit' && e.target.tagName !== 'BUTTON') {
+          e.preventDefault();
+        }
+      });
+
+      // Form submit
+      document.getElementById('maintenanceForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        if (!checkSessionExpiry()) {
+          showPasswordModal();
+          return;
+        }
+        if (isAuthenticated) {
+          handleFormSubmission();
+        } else {
+          showPasswordModal(handleFormSubmission);
+        }
+      });
+
+      // Password modal handlers
+      submitPassword.addEventListener('click', verifyPassword);
+      cancelPassword.addEventListener('click', hidePasswordModal);
+      passwordInput.addEventListener('keyup', function(ev){ if (ev.key === 'Enter') verifyPassword(); });
+      window.addEventListener('click', function(event){ if (event.target === passwordModal) hidePasswordModal(); });
+    }
+
+    // Refresh data function
+    async function refreshData() {
+      var refreshButton = document.getElementById('refreshData');
+      var refreshIcon = document.getElementById('refreshIcon');
+      var refreshSpinner = document.getElementById('refreshSpinner');
+
+      refreshButton.disabled = true;
+      refreshIcon.style.display = 'none';
+      refreshSpinner.style.display = 'inline-block';
+
+      try {
+        var currentFilters = {
+          station: document.getElementById('filterStation').value,
+          type: document.getElementById('filterType').value,
+          user: document.getElementById('filterUser').value,
+          year: document.getElementById('filterYear').value,
+          month: document.getElementById('filterMonth').value,
+          quarter: document.getElementById('filterQuarter').value,
+          displayTimezone: currentDisplayTimezone
+        };
+
+        await loadMaintenanceDataForRefresh();
+
+        document.getElementById('filterStation').value = currentFilters.station;
+        document.getElementById('filterType').value = currentFilters.type;
+        document.getElementById('filterUser').value = currentFilters.user;
+        document.getElementById('filterYear').value = currentFilters.year;
+        document.getElementById('filterMonth').value = currentFilters.month;
+        document.getElementById('filterQuarter').value = currentFilters.quarter;
+
+        currentDisplayTimezone = currentFilters.displayTimezone;
+        if (currentDisplayTimezone === 'HKT') {
+          displayHKTRadio.checked = true;
+        } else {
+          displayUTCRadio.checked = true;
+        }
+
+        updateTableHeaderTimezones();
+
+        if (isDataLoaded) {
+          applyFilters();
+        }
+
+        showCenterNotification('Data refreshed successfully', 'success');
+
+      } catch (error) {
+        console.error('Error refreshing data:', error);
+        showCenterNotification('Failed to refresh data', 'error');
+      } finally {
+        refreshButton.disabled = false;
+        refreshIcon.style.display = 'inline';
+        refreshSpinner.style.display = 'none';
+      }
+    }
+
+    // Setup edit modal
+    function setupEditModal() {
+      document.getElementById('cancelEdit').addEventListener('click', function() {
+        editModal.style.display = 'none';
+      });
+
+      document.getElementById('editForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        handleEditSubmission();
+      });
+
+      window.addEventListener('mousedown', function(event) {
+        if (event.target === editModal) {
+          var handleMouseUp = function(upEvent) {
+            if (upEvent.target === editModal) {
+              editModal.style.display = 'none';
+            }
+            window.removeEventListener('mouseup', handleMouseUp);
+          };
+
+          window.addEventListener('mouseup', handleMouseUp);
+        }
+      });
+
+      setupEditUserInput();
+    }
+
+    // Setup user suggestions for edit modal
+    function setupEditUserInput() {
+      var editUserInput = document.getElementById('editUser');
+      var editUserDropdown = document.createElement('div');
+      editUserDropdown.className = 'user-suggestions';
+      editUserDropdown.id = 'editUserDropdown';
+      editUserInput.parentNode.style.position = 'relative';
+      editUserInput.parentNode.appendChild(editUserDropdown);
+
+      var editSelectedSuggestionIndex = -1;
+
+      editUserInput.addEventListener('input', function() {
+        var value = this.value.toLowerCase().trim();
+        var suggestions = userList.filter(function(user) { return user.toLowerCase().includes(value) && value.length > 0; });
+        showEditUserSuggestions(suggestions);
+      });
+
+      editUserInput.addEventListener('keydown', function(e) {
+        var suggestions = editUserDropdown.querySelectorAll('.user-suggestion');
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          editSelectedSuggestionIndex = Math.min(editSelectedSuggestionIndex + 1, suggestions.length - 1);
+          updateEditSuggestionSelection();
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          editSelectedSuggestionIndex = Math.max(editSelectedSuggestionIndex - 1, -1);
+          updateEditSuggestionSelection();
+        } else if (e.key === 'Enter') {
+          if (editSelectedSuggestionIndex >= 0 && suggestions[editSelectedSuggestionIndex]) {
+            e.preventDefault();
+            selectEditUserSuggestion(suggestions[editSelectedSuggestionIndex].textContent);
+          }
+        } else if (e.key === 'Escape') {
+          hideEditUserSuggestions();
+        }
+      });
+
+      editUserInput.addEventListener('blur', function() {
+        setTimeout(function() { hideEditUserSuggestions(); }, 150);
+      });
+
+      editUserInput.addEventListener('focus', function() {
+        if (this.value.trim()) {
+          var value = this.value.toLowerCase().trim();
+          var suggestions = userList.filter(function(user) { return user.toLowerCase().includes(value); });
+          showEditUserSuggestions(suggestions);
+        }
+      });
+
+      function showEditUserSuggestions(suggestions) {
+        editUserDropdown.innerHTML = '';
+        editSelectedSuggestionIndex = -1;
+        if (suggestions.length === 0) {
+          editUserDropdown.style.display = 'none';
+          return;
+        }
+        suggestions.forEach(function(s) {
+          var div = document.createElement('div');
+          div.className = 'user-suggestion';
+          div.textContent = s;
+          div.addEventListener('click', function() { selectEditUserSuggestion(s); });
+          editUserDropdown.appendChild(div);
+        });
+        editUserDropdown.style.display = 'block';
+      }
+
+      function hideEditUserSuggestions() {
+        editUserDropdown.style.display = 'none';
+        editSelectedSuggestionIndex = -1;
+      }
+
+      function selectEditUserSuggestion(suggestion) {
+        editUserInput.value = suggestion;
+        hideEditUserSuggestions();
+      }
+
+      function updateEditSuggestionSelection() {
+        var suggestions = editUserDropdown.querySelectorAll('.user-suggestion');
+        suggestions.forEach(function(s, i) { s.classList.toggle('selected', i === editSelectedSuggestionIndex); });
+      }
+    }
+
+    // Setup copy all events
+    function setupCopyAllEvents() {
+      document.getElementById('copyAllEvents').addEventListener('click', function() {
+        copyAllEvents();
+      });
+    }
+
+    // Modal
+    function showPasswordModal(actionCallback) {
+      pendingAction = actionCallback;
+      passwordInput.value = '';
+      passwordError.style.display = 'none';
+      passwordModal.style.display = 'block';
+      passwordInput.focus();
+    }
+    function hidePasswordModal() { passwordModal.style.display = 'none'; pendingAction = null; }
+
+    async function verifyPassword() {
+      submitPassword.disabled = true;
+      passwordError.style.display = 'none';
+      try {
+        var response = await fetch('/api/authenticate', {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify({ password: passwordInput.value })
+        });
+        var result = await response.json();
+        if (result.authenticated) {
+          isAuthenticated = true;
+          memoryStore['isAuthenticated'] = 'true';
+          memoryStore['authExpiry'] = Date.now() + 3600000;
+          hidePasswordModal();
+          showCenterNotification('Login Successful', 'success');
+          if (!pendingAction) return;
+          if (pendingAction.action === 'delete') deleteMaintenancePeriod(pendingAction.id);
+          else if (pendingAction.action === 'edit') showEditModal(pendingAction.data);
+          else if (typeof pendingAction === 'function') pendingAction();
+          pendingAction = null;
+        } else {
+          passwordError.textContent = 'Incorrect password. Please try again.';
+          passwordError.style.display = 'block';
+          passwordInput.focus();
+        }
+      } catch (error) {
+        console.error('Authentication error', error);
+        passwordError.textContent = 'Authentication service unavailable. Please try again later.';
+        passwordError.style.display = 'block';
+      } finally { submitPassword.disabled = false; }
+    }
+
+    function setupDateTimeInputs() {
+      document.getElementById('startDate').value = '';
+      document.getElementById('endDate').value = '';
+    }
+
+    async function loadUserList() {
+      try {
+        var response = await fetch('users.txt');
+        if (!response.ok) throw new Error('Failed to load user list');
+        userList = (await response.text()).split('\n').filter(function(u) { return u.trim() !== ''; });
+      } catch (error) {
+        console.error('Error loading users', error);
+        userList = ['Janet (SA)', 'Shirell (AP)'];
+      }
+    }
+
+    function showMessage(elementId, message, type) {
+      var element = document.getElementById(elementId);
+      element.textContent = message;
+      element.className = 'message ' + type + '-message';
+      element.style.display = 'block';
+      setTimeout(function() { element.style.display = 'none'; }, 5000);
+    }
+
+    function hideAllMessages() { document.querySelectorAll('.message').forEach(function(el) { el.style.display = 'none'; }); }
+
+    async function validateTimeInputs() {
+      var station = document.getElementById('station').value;
+      var startInput = document.getElementById('startDate').value;
+      var endInput = document.getElementById('endDate').value;
+      if (!station || !startInput || !endInput) return;
+
+      var startDate = new Date(startInput);
+      var endDate = new Date(endInput);
+      if (isNaN(startDate.getTime())) { showMessage('startDateError','Invalid start time','validation'); return; }
+      if (isNaN(endDate.getTime())) { showMessage('endDateError','Invalid end time','validation'); return; }
+      if (endDate < startDate) { showMessage('endDateError','End time must be after or equal to start time','validation'); return; }
+
+      var checkStartDate = startDate;
+      var checkEndDate = endDate;
+      if (currentInputTimezone === 'UTC') {
+        checkStartDate = new Date(convertUTCToHKT(startInput));
+        checkEndDate = new Date(convertUTCToHKT(endInput));
+      }
+
+      // Skip overlap warning for Data Restoration type
+      var selectedType = document.getElementById('type').value;
+      if (selectedType !== 'Data Restoration' && await checkForOverlaps(station, checkStartDate, checkEndDate)) {
+        showMessage('formError','Warning: This time period overlaps with existing maintenance','validation');
+      } else {
+        document.getElementById('formError').style.display = 'none';
+      }
+    }
+
+    async function handleFormSubmission() {
+      hideAllMessages();
+      var submitBtn = document.getElementById('submitBtn');
+      var submitSpinner = document.getElementById('submitSpinner');
+      submitBtn.disabled = true;
+      submitSpinner.style.display = 'inline-block';
+      try {
+        if (!checkSessionExpiry()) { showPasswordModal(); return; }
+
+        var station = document.getElementById('station').value;
+        var type = document.getElementById('type').value;
+        var user = document.getElementById('user').value.trim();
+        var remarks = document.getElementById('remarks').value;
+        var startInput = document.getElementById('startDate').value;
+        var endInput = document.getElementById('endDate').value;
+
+        if (!station || !type || !user || !remarks || !startInput || !endInput) {
+          showMessage('formError','All fields are required','error'); return;
+        }
+
+        var startDate = new Date(startInput);
+        var endDate = new Date(endInput);
+        if (isNaN(startDate.getTime())) { showMessage('startDateError','Invalid start time','validation'); return; }
+        if (isNaN(endDate.getTime())) { showMessage('endDateError','Invalid end time','validation'); return; }
+        if (endDate < startDate) { showMessage('endDateError','End time must be after or equal to start time','validation'); return; }
+
+        // Convert to HKT for storage if needed
+        var hktStart = startInput;
+        var hktEnd = endInput;
+        if (currentInputTimezone === 'UTC') {
+          hktStart = convertUTCToHKT(startInput);
+          hktEnd = convertUTCToHKT(endInput);
+        }
+
+        var hktStartDate = new Date(hktStart);
+        var hktEndDate = new Date(hktEnd);
+
+        // Skip overlap check for Data Restoration type
+        if (type !== 'Data Restoration' && await checkForOverlaps(station, hktStartDate, hktEndDate)) {
+          showMessage('formError','This maintenance overlaps with an existing maintenance','error'); return;
+        }
+
+        var response = await fetch('http://radsats36:9000/api/maintenance', {
+          method:'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ station: station, type: type, startDate: hktStart, endDate: hktEnd, remarks: remarks, user: user, timezone:'HKT' })
+        });
+
+        if (!response.ok) {
+          var err = await response.json().catch(function() { return {}; });
+          throw new Error(err.error || 'Failed to add maintenance');
+        }
+
+        showCenterNotification('Event Added Successfully', 'success');
+        document.getElementById('maintenanceForm').reset();
+        setupDateTimeInputs();
+        updateTimezoneIndicators();
+        updateAddTimezoneStyles();
+        loadMaintenanceData();
+        document.querySelector('.tab[data-tab="view"]').click();
+        window.history.replaceState({}, document.title, window.location.pathname);
+
+      } catch (error) {
+        console.error('Error:', error);
+        showMessage('formError', error.message || 'An error occurred','error');
+      } finally {
+        submitBtn.disabled = false;
+        submitSpinner.style.display = 'none';
+      }
+    }
+
+    async function checkForOverlaps(station, newStart, newEnd, excludeId) {
+      if (!Array.isArray(allMaintenanceData) || allMaintenanceData.length === 0) await loadMaintenanceData();
+      return allMaintenanceData.some(function(item) {
+        if (item.station !== station) return false;
+        if (excludeId && item.id === excludeId) return false;
+        var existingStart = new Date(item.startDate);
+        var existingEnd = new Date(item.endDate);
+        return (newStart <= existingEnd && newEnd >= existingStart);
+      });
+    }
+
+    function populateYearFilter() {
+      var yearSelect = document.getElementById('filterYear');
+      var currentYear = new Date().getFullYear();
+      while (yearSelect.options.length > 1) yearSelect.remove(1);
+      for (var y = currentYear - 10; y <= currentYear + 1; y++) {
+        var opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y;
+        yearSelect.appendChild(opt);
+      }
+    }
+
+    function setDefaultYearAndQuarter() {
+      var now = new Date();
+      var currentYear = now.getFullYear();
+      var currentMonth = now.getMonth() + 1;
+
+      var yearSelect = document.getElementById('filterYear');
+      yearSelect.value = currentYear.toString();
+
+      var currentQuarter;
+      if (currentMonth <= 3) currentQuarter = 1;
+      else if (currentMonth <= 6) currentQuarter = 2;
+      else if (currentMonth <= 9) currentQuarter = 3;
+      else currentQuarter = 4;
+
+      var quarterSelect = document.getElementById('filterQuarter');
+      quarterSelect.value = currentQuarter.toString();
+
+      updateMonthFilterBasedOnQuarter();
+    }
+
+    async function loadMaintenanceData() {
+      var loadingElement = document.getElementById('loadingData');
+      loadingElement.style.display = 'block';
+      try {
+        var response = await fetch('http://radsats36:9000/api/maintenance').catch(function() { return null; });
+        if (response && response.ok) {
+          allMaintenanceData = await response.json();
+        } else {
+          var local = await fetch('maintenance.json').catch(function() { return null; });
+          if (local && local.ok) {
+            allMaintenanceData = await local.json();
+          } else {
+            allMaintenanceData = [];
+          }
+        }
+        allMaintenanceData.sort(function(a, b) { return new Date(b.startDate) - new Date(a.startDate); });
+
+        isDataLoaded = true;
+        setTimeout(function() {
+          ensureDefaultFiltersSet();
+          applyFilters();
+        }, 100);
+      } catch (error) {
+        console.error('Error loading maintenance data:', error);
+        showMessage('formError','Failed to load maintenance data','error');
+      } finally {
+        loadingElement.style.display = 'none';
+      }
+    }
+
+    async function loadMaintenanceDataForRefresh() {
+      try {
+        var response = await fetch('http://radsats36:9000/api/maintenance').catch(function() { return null; });
+        if (response && response.ok) {
+          allMaintenanceData = await response.json();
+        } else {
+          var local = await fetch('maintenance.json').catch(function() { return null; });
+          if (local && local.ok) {
+            allMaintenanceData = await local.json();
+          } else {
+            allMaintenanceData = [];
+          }
+        }
+        allMaintenanceData.sort(function(a, b) { return new Date(b.startDate) - new Date(a.startDate); });
+        isDataLoaded = true;
+      } catch (error) {
+        console.error('Error loading maintenance data:', error);
+        throw error;
+      }
+    }
+
+    function getQuarterFromDate(date) {
+      var month = date.getMonth() + 1;
+      if (month <= 3) return 1;
+      if (month <= 6) return 2;
+      if (month <= 9) return 3;
+      return 4;
+    }
+
+    function applyFilters() {
+      if (!isDataLoaded) return;
+
+      var stationFilter = document.getElementById('filterStation').value;
+      var typeFilter = document.getElementById('filterType').value;
+      var userFilter = document.getElementById('filterUser').value.toLowerCase().trim();
+      var yearFilter = document.getElementById('filterYear').value;
+      var monthFilter = document.getElementById('filterMonth').value;
+      var quarterFilter = document.getElementById('filterQuarter').value;
+
+      filteredMaintenanceData = allMaintenanceData.filter(function(item) {
+        var stationInfo;
+        if (stationFilter === 'Radar') {
+          stationInfo = stationsConfig[item.station];
+          if (!stationInfo || stationInfo.category !== 'Radar') return false;
+        } else if (stationFilter === 'Satellite') {
+          stationInfo = stationsConfig[item.station];
+          if (!stationInfo || stationInfo.category !== 'Satellite') return false;
+        } else if (stationFilter !== 'all' && item.station !== stationFilter) {
+          return false;
+        }
+
+        if (typeFilter !== 'all' && item.type !== typeFilter) return false;
+        if (userFilter && !item.user.toLowerCase().includes(userFilter)) return false;
+
+        var filterDate;
+
+        if (currentDisplayTimezone === 'HKT') {
+          filterDate = new Date(item.startDate);
+        } else {
+          filterDate = new Date(convertHKTToUTCForDisplay(item.startDate));
+        }
+
+        if (yearFilter !== 'all' && filterDate.getFullYear().toString() !== yearFilter) return false;
+        if (monthFilter !== 'all' && (filterDate.getMonth() + 1).toString() !== monthFilter) return false;
+
+        if (quarterFilter !== 'all') {
+          var itemQuarter = getQuarterFromDate(filterDate);
+          if (itemQuarter.toString() !== quarterFilter) return false;
+        }
+
+        return true;
+      });
+
+      sortAndDisplayData();
+    }
+
+    function resetFilters() {
+      document.getElementById('filterStation').value = 'Radar';
+      document.getElementById('filterType').value = 'all';
+      document.getElementById('filterUser').value = '';
+      document.getElementById('filterYear').value = 'all';
+      document.getElementById('filterMonth').value = 'all';
+      document.getElementById('filterQuarter').value = 'all';
+      setDefaultYearAndQuarter();
+      updateDisplayTimezoneBasedOnFilter();
+      if (isDataLoaded) {
+        applyFilters();
+      }
+    }
+
+    function displayMaintenanceData(data) {
+      var tbody = document.querySelector('#maintenanceTable tbody');
+      tbody.innerHTML = '';
+      if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No records found</td></tr>';
+        return;
+      }
+
+      data.forEach(function(item, index) {
+        var displayName = stationsConfig[item.station] ? stationsConfig[item.station].name : item.station;
+
+        var displayStartTime, displayEndTime;
+        if (currentDisplayTimezone === 'UTC') {
+          displayStartTime = formatDateTimeLocal(convertHKTToUTCForDisplay(item.startDate));
+          displayEndTime = formatDateTimeLocal(convertHKTToUTCForDisplay(item.endDate));
+        } else {
+          displayStartTime = formatDateTimeLocal(item.startDate);
+          displayEndTime = formatDateTimeLocal(item.endDate);
+        }
+
+        var startTimeSourceDate, endTimeSourceDate;
+        if (currentDisplayTimezone === 'UTC') {
+          startTimeSourceDate = convertHKTToUTCForDisplay(item.startDate);
+          endTimeSourceDate = convertHKTToUTCForDisplay(item.endDate);
+        } else {
+          startTimeSourceDate = item.startDate;
+          endTimeSourceDate = item.endDate;
+        }
+
+        var startAvailabilityLink = createAvailabilityLink(startTimeSourceDate, item.station);
+        var endAvailabilityLink = createAvailabilityLink(endTimeSourceDate, item.station);
+
+        var isSystemUser = (item.user || '').toLowerCase() === 'system';
+        var editButtonHtml = isSystemUser
+          ? '<button class="edit-btn" data-id="' + item.id + '" title="Cannot edit system maintenance" disabled><i class="fas fa-edit"></i> Edit</button>'
+          : '<button class="edit-btn" data-id="' + item.id + '" title="Edit maintenance"><i class="fas fa-edit"></i> Edit</button>';
+
+        var deleteButtonHtml = isSystemUser
+          ? '<button class="delete-btn" data-id="' + item.id + '" title="Cannot delete system maintenance" disabled><i class="fas fa-trash"></i> Delete</button>'
+          : '<button class="delete-btn" data-id="' + item.id + '" title="Delete maintenance"><i class="fas fa-trash"></i> Delete</button>';
+
+        var row = document.createElement('tr');
+        row.innerHTML =
+          '<td>' + (index + 1) + '</td>' +
+          '<td>' + displayName + '</td>' +
+          '<td>' + formatEventTypeBadge(item.type) + '</td>' +
+          '<td><a href="' + startAvailabilityLink + '" target="_blank" rel="noopener noreferrer" style="color: #2979ff; text-decoration: underline;">' + displayStartTime.dateOnly + '</a> ' + displayStartTime.timeOnly + ' <span style="font-size: 0.8em; color: #666;">(' + displayStartTime.dayOfWeek + ')</span></td>' +
+          '<td><a href="' + endAvailabilityLink + '" target="_blank" rel="noopener noreferrer" style="color: #2979ff; text-decoration: underline;">' + displayEndTime.dateOnly + '</a> ' + displayEndTime.timeOnly + ' <span style="font-size: 0.8em; color: #666;">(' + displayEndTime.dayOfWeek + ')</span></td>' +
+          '<td>' + (item.user || 'N/A') + '</td>' +
+          '<td class="remarks-cell">' + item.remarks + '</td>' +
+          '<td><div class="action-buttons">' + editButtonHtml + '<button class="copy-btn" data-id="' + item.id + '" title="Copy maintenance details"><i class="fas fa-copy"></i> Copy</button>' + deleteButtonHtml + '</div></td>';
+        tbody.appendChild(row);
+      });
+
+      // Setup action button event listeners
+      document.querySelectorAll('.delete-btn').forEach(function(button) {
+        button.addEventListener('click', function() {
+          var id = this.getAttribute('data-id');
+          if (!checkSessionExpiry()) {
+            pendingAction = { action: 'delete', id: id };
+            showPasswordModal();
+            return;
+          }
+          if (isAuthenticated) deleteMaintenancePeriod(id);
+          else { pendingAction = { action: 'delete', id: id }; showPasswordModal(); }
+        });
+      });
+
+      document.querySelectorAll('.edit-btn').forEach(function(button) {
+        button.addEventListener('click', function() {
+          var id = this.getAttribute('data-id');
+          var itemData = allMaintenanceData.find(function(item) { return item.id === id; });
+          if (!checkSessionExpiry()) {
+            pendingAction = { action: 'edit', data: itemData };
+            showPasswordModal();
+            return;
+          }
+          if (isAuthenticated) showEditModal(itemData);
+          else { pendingAction = { action: 'edit', data: itemData }; showPasswordModal(); }
+        });
+      });
+
+      document.querySelectorAll('.copy-btn').forEach(function(button) {
+        button.addEventListener('click', function() {
+          var id = this.getAttribute('data-id');
+          var itemData = allMaintenanceData.find(function(item) { return item.id === id; });
+          copyEventDetails(itemData, this);
+        });
+      });
+    }
+
+    function formatDateTimeLocal(dateString) {
+      var date = new Date(dateString);
+      var pad = function(n) { return String(n).padStart(2,'0'); };
+      var dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      var dayOfWeek = dayNames[date.getDay()];
+
+      return {
+        dateOnly: pad(date.getDate()) + '/' + pad(date.getMonth()+1) + '/' + date.getFullYear(),
+        timeOnly: pad(date.getHours()) + ':' + pad(date.getMinutes()),
+        dayOfWeek: dayOfWeek,
+        fullDateTime: pad(date.getDate()) + '/' + pad(date.getMonth()+1) + '/' + date.getFullYear() + ' ' + pad(date.getHours()) + ':' + pad(date.getMinutes()) + ' (' + dayOfWeek + ')'
+      };
+    }
+
+    function createAvailabilityLink(dateString, station) {
+      var date = new Date(dateString);
+      var year = date.getFullYear();
+      var month = String(date.getMonth() + 1).padStart(2, '0');
+      var day = String(date.getDate()).padStart(2, '0');
+      var formattedDate = year + '-' + month + '-' + day;
+
+      // Hardcoded config to match availability page default
+      return `http://radsats36:9000/radsat_availability.html?config=radsat_image&station=${station}&date=${formattedDate}`;
+    }
+
+    function showEditModal(itemData) {
+      if (!itemData) return;
+
+      document.getElementById('editEventId').value = itemData.id;
+      document.getElementById('editStation').value = itemData.station;
+      document.getElementById('editType').value = itemData.type;
+      document.getElementById('editUser').value = itemData.user;
+      document.getElementById('editRemarks').value = itemData.remarks;
+
+      var selectedStation = itemData.station;
+      var startDateValue, endDateValue;
+
+      if (selectedStation && stationsConfig[selectedStation] && stationsConfig[selectedStation].timezone === 'UTC') {
+        startDateValue = convertHKTToUTCForDisplay(itemData.startDate).slice(0, 16);
+        endDateValue = convertHKTToUTCForDisplay(itemData.endDate).slice(0, 16);
+      } else {
+        startDateValue = itemData.startDate.slice(0, 16);
+        endDateValue = itemData.endDate.slice(0, 16);
+      }
+
+      document.getElementById('editStartDate').value = startDateValue;
+      document.getElementById('editEndDate').value = endDateValue;
+
+      updateEditTimezoneIndicators();
+      editModal.style.display = 'block';
+    }
+
+    async function handleEditSubmission() {
+      var formError = document.getElementById('editFormError');
+      formError.style.display = 'none';
+
+      try {
+        if (!checkSessionExpiry()) { showPasswordModal(); return; }
+
+        var id = document.getElementById('editEventId').value;
+        var station = document.getElementById('editStation').value;
+        var type = document.getElementById('editType').value;
+        var user = document.getElementById('editUser').value.trim();
+        var remarks = document.getElementById('editRemarks').value;
+        var startInput = document.getElementById('editStartDate').value;
+        var endInput = document.getElementById('editEndDate').value;
+
+        if (!station || !type || !user || !remarks || !startInput || !endInput) {
+          formError.textContent = 'All fields are required';
+          formError.style.display = 'block';
+          return;
+        }
+
+        var startDate = new Date(startInput);
+        var endDate = new Date(endInput);
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          formError.textContent = 'Invalid date/time format';
+          formError.style.display = 'block';
+          return;
+        }
+        if (endDate < startDate) {
+          formError.textContent = 'End time must be after or equal to start time';
+          formError.style.display = 'block';
+          return;
+        }
+
+        var hktStartInput = startInput;
+        var hktEndInput = endInput;
+        if (stationsConfig[station] && stationsConfig[station].timezone === 'UTC') {
+          hktStartInput = convertUTCToHKT(startInput);
+          hktEndInput = convertUTCToHKT(endInput);
+        }
+
+        var hktStartDate = new Date(hktStartInput);
+        var hktEndDate = new Date(hktEndInput);
+
+        if (type !== 'Data Restoration' && await checkForOverlaps(station, hktStartDate, hktEndDate, id)) {
+          formError.textContent = 'This maintenance overlaps with an existing maintenance';
+          formError.style.display = 'block';
+          return;
+        }
+
+        var response = await fetch('http://radsats36:9000/api/maintenance/' + id, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            station: station,
+            type: type,
+            startDate: hktStartInput,
+            endDate: hktEndInput,
+            remarks: remarks,
+            user: user,
+            timezone: 'HKT'
+          })
+        });
+
+        if (!response.ok) {
+          var err = await response.json().catch(function() { return {}; });
+          throw new Error(err.error || 'Failed to update maintenance');
+        }
+
+        editModal.style.display = 'none';
+        loadMaintenanceData();
+        showCenterNotification('Event Updated Successfully', 'success');
+
+      } catch (error) {
+        console.error('Error updating maintenance:', error);
+        formError.textContent = error.message || 'An error occurred';
+        formError.style.display = 'block';
+      }
+    }
+
+    function copyEventDetails(itemData, buttonElement) {
+      if (!itemData) return;
+
+      var displayName = stationsConfig[itemData.station] ? stationsConfig[itemData.station].name : itemData.station;
+
+      var displayStartTime, displayEndTime;
+      if (currentDisplayTimezone === 'UTC') {
+        displayStartTime = formatDateTimeLocal(convertHKTToUTCForDisplay(itemData.startDate));
+        displayEndTime = formatDateTimeLocal(convertHKTToUTCForDisplay(itemData.endDate));
+      } else {
+        displayStartTime = formatDateTimeLocal(itemData.startDate);
+        displayEndTime = formatDateTimeLocal(itemData.endDate);
+      }
+
+      var eventDetails = displayName + ' | ' + (itemData.type || 'N/A') + ' | ' + displayStartTime.fullDateTime + ' ' + currentDisplayTimezone + ' - ' + displayEndTime.fullDateTime + ' ' + currentDisplayTimezone + ' | ' + (itemData.user || 'N/A') + ' | ' + (itemData.remarks || 'N/A');
+
+      copyToClipboardWithButton(eventDetails, buttonElement);
+    }
+
+    function copyAllEvents() {
+      var copyAllButton = document.getElementById('copyAllEvents');
+      if (!filteredMaintenanceData || filteredMaintenanceData.length === 0) {
+        showCopyNotification('No maintenance to copy');
+        return;
+      }
+
+      var originalText = copyAllButton.innerHTML;
+      var originalColor = copyAllButton.style.backgroundColor;
+
+      copyAllButton.innerHTML = '<i class="fas fa-check"></i> Copied All!';
+      copyAllButton.style.backgroundColor = '#2979ff';
+      copyAllButton.disabled = true;
+
+      var allEventsText = 'Maintenance Schedule - ' + filteredMaintenanceData.length + ' maintenance records (' + currentDisplayTimezone + ' time)\n\n';
+
+      var currentTableData = document.querySelectorAll('#maintenanceTable tbody tr');
+
+      currentTableData.forEach(function(row, index) {
+        if (row.cells.length < 8) return;
+
+        var displayName = row.cells[1].textContent;
+        var type = row.cells[2].textContent;
+        var startTime = row.cells[3].textContent.replace(/\s+/g, ' ').trim();
+        var endTime = row.cells[4].textContent.replace(/\s+/g, ' ').trim();
+        var user = row.cells[5].textContent;
+        var remarks = row.cells[6].textContent;
+
+        allEventsText += (index + 1) + ' | ' + displayName + ' | ' + type + ' | ' + startTime + ' ' + currentDisplayTimezone + ' - ' + endTime + ' ' + currentDisplayTimezone + ' | ' + user + ' | ' + remarks + '\n';
+      });
+
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(allEventsText).then(function() {
+          setTimeout(function() {
+            copyAllButton.innerHTML = originalText;
+            copyAllButton.style.backgroundColor = originalColor;
+            copyAllButton.disabled = false;
+          }, 2000);
+        }).catch(function(err) {
+          console.error('Failed to copy to clipboard:', err);
+          copyAllButton.innerHTML = originalText;
+          copyAllButton.style.backgroundColor = originalColor;
+          copyAllButton.disabled = false;
+        });
+      } else {
+        var textArea = document.createElement('textarea');
+        textArea.value = allEventsText;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        try {
+          var successful = document.execCommand('copy');
+          if (successful) {
+            setTimeout(function() {
+              copyAllButton.innerHTML = originalText;
+              copyAllButton.style.backgroundColor = originalColor;
+              copyAllButton.disabled = false;
+            }, 2000);
+          } else {
+            copyAllButton.innerHTML = originalText;
+            copyAllButton.style.backgroundColor = originalColor;
+            copyAllButton.disabled = false;
+          }
+        } catch (err) {
+          console.error('Fallback copy failed:', err);
+          copyAllButton.innerHTML = originalText;
+          copyAllButton.style.backgroundColor = originalColor;
+          copyAllButton.disabled = false;
+        }
+
+        document.body.removeChild(textArea);
+      }
+    }
+
+    function copyToClipboard(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(function() {
+          showCopyNotification();
+        }).catch(function(err) {
+          console.error('Failed to copy to clipboard:', err);
+          fallbackCopyToClipboard(text);
+        });
+      } else {
+        fallbackCopyToClipboard(text);
+      }
+    }
+
+    function copyToClipboardWithButton(text, buttonElement) {
+      if (!buttonElement) return copyToClipboard(text);
+
+      var originalText = buttonElement.innerHTML;
+      buttonElement.innerHTML = '<i class="fas fa-check"></i> Copied!';
+      buttonElement.style.backgroundColor = '#2979ff';
+      buttonElement.disabled = true;
+
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(function() {
+          setTimeout(function() {
+            buttonElement.innerHTML = originalText;
+            buttonElement.style.backgroundColor = '#6c757d';
+            buttonElement.disabled = false;
+          }, 2000);
+        }).catch(function(err) {
+          console.error('Failed to copy to clipboard:', err);
+          fallbackCopyToClipboardWithButton(text, buttonElement, originalText);
+        });
+      } else {
+        fallbackCopyToClipboardWithButton(text, buttonElement, originalText);
+      }
+    }
+
+    function fallbackCopyToClipboardWithButton(text, buttonElement, originalText) {
+      var textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+
+      try {
+        var successful = document.execCommand('copy');
+        if (successful) {
+          setTimeout(function() {
+            buttonElement.innerHTML = originalText;
+            buttonElement.style.backgroundColor = '#6c757d';
+            buttonElement.disabled = false;
+          }, 2000);
+        } else {
+          console.error('Fallback copy failed');
+          buttonElement.innerHTML = originalText;
+          buttonElement.style.backgroundColor = '#6c757d';
+          buttonElement.disabled = false;
+        }
+      } catch (err) {
+        console.error('Fallback copy failed:', err);
+        buttonElement.innerHTML = originalText;
+        buttonElement.style.backgroundColor = '#6c757d';
+        buttonElement.disabled = false;
+      }
+
+      document.body.removeChild(textArea);
+    }
+
+    function fallbackCopyToClipboard(text) {
+      var textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+
+      try {
+        var successful = document.execCommand('copy');
+        if (successful) {
+          showCopyNotification();
+        } else {
+          console.error('Fallback copy failed');
+        }
+      } catch (err) {
+        console.error('Fallback copy failed:', err);
+      }
+
+      document.body.removeChild(textArea);
+    }
+
+    function showCopyNotification(message) {
+      message = message || 'Copied to clipboard!';
+      copyNotification.textContent = message;
+      copyNotification.classList.add('show');
+      setTimeout(function() {
+        copyNotification.classList.remove('show');
+      }, 2000);
+    }
+
+    function showCenterNotification(message, type) {
+      type = type || 'success';
+      centerNotification.textContent = message;
+      centerNotification.className = 'center-notification ' + type;
+      centerNotification.classList.add('show');
+
+      setTimeout(function() {
+        centerNotification.classList.remove('show');
+      }, 3000);
+    }
+
+    async function deleteMaintenancePeriod(id) {
+      if (!checkSessionExpiry()) { showPasswordModal(); return; }
+
+      var confirmed = await new Promise(function(resolve) {
+        var modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.style.display = 'block';
+        modal.innerHTML =
+          '<div class="modal-content">' +
+            '<p class="modal-title">Are you sure you want to delete this event?</p>' +
+            '<div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">' +
+              '<button class="modal-btn modal-btn-secondary" id="cancelDel" style="padding:6px 10px; background:#6c757d; color:white; border-radius:4px;">Cancel</button>' +
+              '<button class="modal-btn modal-btn-primary" id="confirmDel" style="padding:6px 10px; background:#ff4444; color:white; border-radius:4px;">Delete</button>' +
+            '</div>' +
+          '</div>';
+        document.body.appendChild(modal);
+        modal.querySelector('#cancelDel').addEventListener('click', function() { modal.remove(); resolve(false); });
+        modal.querySelector('#confirmDel').addEventListener('click', function() { modal.remove(); resolve(true); });
+      });
+
+      if (!confirmed) return;
+
+      try {
+        var response = await fetch('http://radsats36:9000/api/maintenance/' + id, { method: 'DELETE' });
+        if (response.ok) {
+          loadMaintenanceData();
+          showCenterNotification('Event Deleted Successfully', 'success');
+        } else {
+          showMessage('formError','Error deleting event','error');
+        }
+      } catch (error) {
+        console.error('Error deleting maintenance', error);
+        showMessage('formError','Error deleting event','error');
+      }
+    }
+
+    function updateDisplayTimezoneBasedOnFilter() {
+      var selectedFilter = filterStationSelect.value;
+
+      if (selectedFilter === 'Radar' || selectedFilter === 'all') {
+        currentDisplayTimezone = 'HKT';
+        displayHKTRadio.checked = true;
+      } else if (selectedFilter === 'Satellite') {
+        currentDisplayTimezone = 'UTC';
+        displayUTCRadio.checked = true;
+      } else if (stationsConfig[selectedFilter]) {
+        var stationTimezone = stationsConfig[selectedFilter].timezone || 'HKT';
+        currentDisplayTimezone = stationTimezone;
+        if (stationTimezone === 'HKT') displayHKTRadio.checked = true;
+        else displayUTCRadio.checked = true;
+      }
+      if (isDataLoaded) {
+        applyFilters();
+      }
+      updateTableHeaderTimezones();
+      updateAddTimezoneStyles();
+    }
+
+    function updateMonthFilterBasedOnQuarter() {
+      var quarterSelect = document.getElementById('filterQuarter');
+      var monthSelect = document.getElementById('filterMonth');
+      var selectedQuarter = quarterSelect.value;
+
+      var currentMonth = monthSelect.value;
+
+      while (monthSelect.options.length > 1) {
+        monthSelect.remove(1);
+      }
+
+      var monthsToShow = [];
+
+      if (selectedQuarter === 'all') {
+        monthsToShow = [
+          {value: '1', text: 'January'},
+          {value: '2', text: 'February'},
+          {value: '3', text: 'March'},
+          {value: '4', text: 'April'},
+          {value: '5', text: 'May'},
+          {value: '6', text: 'June'},
+          {value: '7', text: 'July'},
+          {value: '8', text: 'August'},
+          {value: '9', text: 'September'},
+          {value: '10', text: 'October'},
+          {value: '11', text: 'November'},
+          {value: '12', text: 'December'}
+        ];
+      } else if (selectedQuarter === '1') {
+        monthsToShow = [
+          {value: '1', text: 'January'},
+          {value: '2', text: 'February'},
+          {value: '3', text: 'March'}
+        ];
+      } else if (selectedQuarter === '2') {
+        monthsToShow = [
+          {value: '4', text: 'April'},
+          {value: '5', text: 'May'},
+          {value: '6', text: 'June'}
+        ];
+      } else if (selectedQuarter === '3') {
+        monthsToShow = [
+          {value: '7', text: 'July'},
+          {value: '8', text: 'August'},
+          {value: '9', text: 'September'}
+        ];
+      } else if (selectedQuarter === '4') {
+        monthsToShow = [
+          {value: '10', text: 'October'},
+          {value: '11', text: 'November'},
+          {value: '12', text: 'December'}
+        ];
+      }
+
+      monthsToShow.forEach(function(month) {
+        var option = document.createElement('option');
+        option.value = month.value;
+        option.textContent = month.text;
+        monthSelect.appendChild(option);
+      });
+
+      if (currentMonth !== 'all' && monthsToShow.some(function(m) { return m.value === currentMonth; })) {
+        monthSelect.value = currentMonth;
+      } else {
+        monthSelect.value = 'all';
+      }
+    }
+
+    function parseURLParameters() {
+        var urlParams = new URLSearchParams(window.location.search);
+        var params = {};
+
+        urlParams.forEach(function(value, key) {
+            params[key] = decodeURIComponent(value);
+        });
+
+        return params;
+    }
+
+    function populateFormFromURL(params) {
+        if (params.tab === 'add') {
+            document.querySelector('.tab[data-tab="add"]').click();
+        }
+
+        if (params.station || params.imageType) {
+            var stationValue = params.station || params.imageType;
+            var stationSel = document.getElementById('station');
+            for (var i = 0; i < stationSel.options.length; i++) {
+                if (stationSel.options[i].value === stationValue || stationSel.options[i].textContent === stationValue) {
+                    stationSel.value = stationSel.options[i].value;
+                    updateTimezoneIndicators();
+                    updateAddTimezoneStyles();
+                    break;
+                }
+            }
+        }
+
+        if (params.type || params.eventType) {
+            var typeValue = params.type || params.eventType;
+            var typeSel = document.getElementById('type');
+            for (var j = 0; j < typeSel.options.length; j++) {
+                if (typeSel.options[j].value === typeValue || typeSel.options[j].textContent === typeValue) {
+                    typeSel.value = typeSel.options[j].value;
+                    break;
+                }
+            }
+        }
+
+        if (params.startDate) {
+            var startInput = document.getElementById('startDate');
+            var dateValue = params.startDate;
+            if (dateValue.indexOf('T') === -1) {
+                dateValue += 'T10:00';
+            }
+            startInput.value = dateValue.slice(0, 16);
+        }
+
+        if (params.endDate) {
+            var endInput = document.getElementById('endDate');
+            var endDateValue = params.endDate;
+            if (endDateValue.indexOf('T') === -1) {
+                endDateValue += 'T14:00';
+            }
+            endInput.value = endDateValue.slice(0, 16);
+        }
+
+        if (params.user) {
+            document.getElementById('user').value = params.user;
+        }
+
+        if (params.remarks) {
+            document.getElementById('remarks').value = params.remarks;
+        }
+    }
+  </script>
+</body>
+</html>

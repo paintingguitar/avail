@@ -1,0 +1,84 @@
+{
+    "stations": [
+        {
+            "id": "Disdrometer",
+            "name": "Disdrometer",
+            "interval": 5,
+            "dataSource": "disdrometer_file_list/avail_data",
+            "filePattern": "RF_rate_past_2hrs",
+            "description": "Disdrometer > Rainfall rate (past 2 hrs) (Distrometer/1min_mean_rainrate_lite)",
+            "timezone": "HKT",
+            "dataStartDate": "2024-04-02"
+        },
+        {
+            "id": "XBAND",
+            "name": "XBAND",
+            "interval": 5,
+            "dataSource": "XBAND_file_list/avail_data",
+            "filePattern": "HKX_020_020.ppi_Velocity",
+            "description": "SHW > Real time > Velocity (Zoom in) > 2.0 deg (XBAND/HKX_020_020.ppi_Velocity)",
+            "timezone": "HKT",
+            "dataStartDate": "2023-03-03"
+        },
+        {
+            "id": "CCH_HKWS1 (raw)",
+            "name": "CCH_HKWS1 (raw)",
+            "interval": 6,
+            "dataSource": "CCH_HKWS1_file_list/avail_data",
+            "filePattern": "CCH_HKWS1",
+            "description": "Raw CCH data from /mnt/raid_sata/hongkong-cheungchau/level2/odim (via meteo@HKWS1 which is 192.168.185.84)",
+            "timezone": "HKT",
+            "dataStartDate": "2026-05-14"
+        },
+        {
+            "id": "CCH_HKWS2 (raw)",
+            "name": "CCH_HKWS2 (raw)",
+            "interval": 6,
+            "dataSource": "CCH_HKWS2_file_list/avail_data",
+            "filePattern": "CCH_HKWS2",
+            "description": "Raw CCH data from /mnt/raid_sata/hongkong-cheungchau/level2/odim (via meteo@HKWS2 which is 192.168.185.86)",
+            "timezone": "HKT",
+            "dataStartDate": "2026-05-14"
+        },
+        {
+            "id": "CCH_HKWS1_prelim (raw)",
+            "name": "CCH_HKWS1_prelim (raw)",
+            "interval": 5,
+            "dataSource": "CCH_HKWS1_prelim_file_list/avail_data",
+            "filePattern": "CCH_HKWS1_prelim",
+            "description": "(20 Jan 2026 - 14 May 2026) Raw CCH data from /mnt/raid_sata/hongkong-cheungchau/level2/odim (via meteo@HKWS1 which is 192.168.185.84)",
+            "timezone": "HKT",
+            "dataStartDate": "2026-01-20"
+        },
+        {
+            "id": "CCH_HKWS2_prelim (raw)",
+            "name": "CCH_HKWS2_prelim (raw)",
+            "interval": 5,
+            "dataSource": "CCH_HKWS2_prelim_file_list/avail_data",
+            "filePattern": "CCH_HKWS2_prelim",
+            "description": "(26 Jan 2026 - 14 May 2026) Raw CCH data from /mnt/raid_sata/hongkong-cheungchau/level2/odim (via meteo@HKWS2 which is 192.168.185.86)",
+            "timezone": "HKT",
+            "dataStartDate": "2026-01-26"
+        },
+        {
+            "id": "TCR (raw)",
+            "name": "TCR (raw)",
+            "interval": 6,
+            "dataSource": "raw_file_list/avail_data/daily",
+            "filePattern": "TCR",
+            "description": "Raw TCR data from /backup_data/TCR_IrisFormatRaw_archive (via radarop@rad19-t1), with missing raw data filled by rapid scan data when available.",
+            "timezone": "HKT",
+            "dataStartDate": "2025-04-02"
+        },
+        {
+            "id": "TMS (raw)",
+            "name": "TMS (raw)",
+            "interval": 6,
+            "dataSource": "raw_file_list/avail_data/daily",
+            "filePattern": "TMS",
+            "description": "Raw TCR data from /backup_data/TMS_IrisFormatRaw_archive (via radarop@rad19-t1), with missing raw data filled by rapid scan data when available.",
+            "timezone": "HKT",
+            "dataStartDate": "2025-04-02"
+        }
+    ]
+}

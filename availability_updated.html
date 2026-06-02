@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Station Availability Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        .config-panel {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .config-panel h2 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-size: 20px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            align-items: end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .form-group select,
+        .form-group input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            min-width: 150px;
+        }
+
+        .btn {
+            padding: 8px 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+        }
+
+        .btn-sm {
+            padding: 5px 12px;
+            font-size: 12px;
+            background: #95a5a6;
+        }
+
+        .btn-sm:hover {
+            background: #7f8c8d;
+        }
+
+        .quick-btns {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .results-panel {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+
+        .error {
+            background: #fee;
+            border: 1px solid #e74c3c;
+            color: #e74c3c;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 12px;
+            border-radius: 4px;
+            border-left: 4px solid #3498db;
+        }
+
+        .stat-card.warning {
+            border-left-color: #f39c12;
+        }
+
+        .stat-card.success {
+            border-left-color: #27ae60;
+        }
+
+        .stat-card.info {
+            border-left-color: #9b59b6;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-top: 4px;
+        }
+
+        .stat-detail {
+            font-size: 12px;
+            color: #95a5a6;
+            margin-top: 2px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th {
+            background: #34495e;
+            color: white;
+            padding: 10px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #ecf0f1;
+            font-size: 13px;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .table-container {
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .avail-high {
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        .avail-medium {
+            color: #f39c12;
+            font-weight: bold;
+        }
+
+        .avail-low {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Station Availability Dashboard</h1>
+
+        <!-- Configuration Panel -->
+        <div class="config-panel">
+            <h2>Configuration</h2>
+            <div id="configLoading">Loading...</div>
+            <div id="configContent" style="display:none;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="stationSelect">Station</label>
+                        <select id="stationSelect">
+                            <option value="">Select station...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="startDate">Start Date (HKT)</label>
+                        <input type="date" id="startDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="endDate">End Date (HKT)</label>
+                        <input type="date" id="endDate">
+                    </div>
+                    <div class="form-group">
+                        <label for="viewMode">View Mode</label>
+                        <select id="viewMode">
+                            <option value="daily">Daily</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="quarterly">Quarterly</option>
+                            <option value="yearly">Yearly</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="align-self: end;">
+                        <button class="btn" onclick="calculateAvailability()">Calculate</button>
+                    </div>
+                </div>
+                <div class="quick-btns">
+                    <span style="font-size:13px;color:#555;margin-right:5px;">Quick:</span>
+                    <button class="btn btn-sm" onclick="setQuickDate('today')">Today</button>
+                    <button class="btn btn-sm" onclick="setQuickDate('yesterday')">Yesterday</button>
+                    <button class="btn btn-sm" onclick="setQuickDate('last7days')">Last 7 Days</button>
+                    <button class="btn btn-sm" onclick="setQuickDate('last30days')">Last 30 Days</button>
+                    <button class="btn btn-sm" onclick="setQuickDate('thisMonth')">This Month</button>
+                    <button class="btn btn-sm" onclick="setQuickDate('lastMonth')">Last Month</button>
+                    <button class="btn btn-sm" onclick="setQuickDate('thisQuarter')">This Quarter</button>
+                    <button class="btn btn-sm" onclick="setQuickDate('thisYear')">This Year</button>
+                    <button class="btn btn-sm" onclick="setQuickDate('allTime')">All Time</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Panel -->
+        <div class="results-panel">
+            <h2 id="resultsTitle">Availability Results</h2>
+            <div id="resultsContent">
+                <div class="loading">Select a station and date range, then click "Calculate" to view availability.</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ GLOBAL STATE ============
+        const MAINT_API = "http://radsats36:9000/api/maintenance";
+        let stationsConfig = [];
+        let maintenanceData = [];
+        let availabilityData = {};
+        let currentStation = null;
+
+        // ============ INITIALIZATION ============
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadConfig();
+        });
+
+        async function loadConfig() {
+            try {
+                const response = await fetch('availability_stations_config.json');
+                const config = await response.json();
+                stationsConfig = config.stations;
+
+                const select = document.getElementById('stationSelect');
+                stationsConfig.forEach(station => {
+                    const option = document.createElement('option');
+                    option.value = station.id;
+                    option.textContent = `${station.name} (${station.interval}min interval)`;
+                    select.appendChild(option);
+                });
+
+                document.getElementById('configLoading').style.display = 'none';
+                document.getElementById('configContent').style.display = 'block';
+            } catch (error) {
+                document.getElementById('configLoading').textContent = 'Error loading configuration: ' + error.message;
+            }
+        }
+
+        // ============ QUICK DATE BUTTONS ============
+        function setQuickDate(preset) {
+            const now = new Date();
+            let startDate, endDate;
+
+            switch(preset) {
+                case 'today':
+                    startDate = endDate = formatDate(now);
+                    break;
+                case 'yesterday':
+                    const yesterday = new Date(now);
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    startDate = endDate = formatDate(yesterday);
+                    break;
+                case 'last7days':
+                    endDate = formatDate(now);
+                    const last7 = new Date(now);
+                    last7.setDate(last7.getDate() - 7);
+                    startDate = formatDate(last7);
+                    break;
+                case 'last30days':
+                    endDate = formatDate(now);
+                    const last30 = new Date(now);
+                    last30.setDate(last30.getDate() - 30);
+                    startDate = formatDate(last30);
+                    break;
+                case 'thisMonth':
+                    startDate = formatDate(new Date(now.getFullYear(), now.getMonth(), 1));
+                    endDate = formatDate(now);
+                    break;
+                case 'lastMonth':
+                    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+                    startDate = formatDate(lastMonthStart);
+                    endDate = formatDate(lastMonthEnd);
+                    break;
+                case 'thisQuarter':
+                    const quarterStart = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+                    startDate = formatDate(quarterStart);
+                    endDate = formatDate(now);
+                    break;
+                case 'thisYear':
+                    startDate = formatDate(new Date(now.getFullYear(), 0, 1));
+                    endDate = formatDate(now);
+                    break;
+                case 'allTime':
+                    if (currentStation) {
+                        startDate = currentStation.dataStartDate;
+                        endDate = formatDate(now);
+                    } else {
+                        startDate = '2020-01-01';
+                        endDate = formatDate(now);
+                    }
+                    break;
+            }
+
+            document.getElementById('startDate').value = startDate;
+            document.getElementById('endDate').value = endDate;
+        }
+
+        function formatDate(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        // ============ MAIN CALCULATION ============
+        async function calculateAvailability() {
+            const stationId = document.getElementById('stationSelect').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const viewMode = document.getElementById('viewMode').value;
+
+            if (!stationId || !startDate || !endDate) {
+                alert('Please select station and date range.');
+                return;
+            }
+
+            currentStation = stationsConfig.find(s => s.id === stationId);
+            if (!currentStation) return;
+
+            document.getElementById('resultsTitle').textContent = 
+                `Availability: ${currentStation.name} (${startDate} to ${endDate})`;
+            document.getElementById('resultsContent').innerHTML = 
+                '<div class="loading">Fetching availability data...</div>';
+
+            try {
+                // Calculate slots per day from station config interval
+                const slotsPerDay = (60 / currentStation.interval) * 24;
+
+                // Fetch maintenance data
+                maintenanceData = await fetchMaintenanceData(stationId, startDate, endDate);
+
+                // Fetch daily availability data
+                availabilityData = await fetchAvailabilityData(currentStation, startDate, endDate);
+
+                // Process data based on view mode
+                let rows = [];
+                if (viewMode === 'daily') {
+                    rows = processDailyView(startDate, endDate, slotsPerDay);
+                } else if (viewMode === 'monthly') {
+                    rows = processMonthlyView(startDate, endDate, slotsPerDay);
+                } else if (viewMode === 'quarterly') {
+                    rows = processQuarterlyView(startDate, endDate, slotsPerDay);
+                } else if (viewMode === 'yearly') {
+                    rows = processYearlyView(startDate, endDate, slotsPerDay);
+                }
+
+                // Calculate summary totals
+                const summary = calculateSummary(rows, slotsPerDay);
+
+                // Render results
+                renderResults(summary, rows, viewMode, slotsPerDay);
+
+            } catch (error) {
+                document.getElementById('resultsContent').innerHTML = 
+                    `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+        // ============ DATA FETCHING ============
+        async function fetchMaintenanceData(stationId, startDate, endDate) {
+            try {
+                const response = await fetch(MAINT_API);
+                if (!response.ok) {
+                    console.warn('Maintenance API returned status:', response.status);
+                    return [];
+                }
+                const allEvents = await response.json();
+                
+                // Filter by station and date range
+                return allEvents.filter(event => {
+                    const eventImageType = event.imageType || event.image_type || '';
+                    const eventStart = event.startTime || event.start_time || '';
+                    const eventEnd = event.endTime || event.end_time || '';
+
+                    // Match station name by filePattern or station name (case-insensitive partial match) [3][4]
+                    const filePattern = currentStation?.filePattern || '';
+                    const stationMatch = 
+                        eventImageType.toLowerCase().includes(stationId.toLowerCase().replace(' (raw)', '')) ||
+                        eventImageType.toLowerCase().includes(filePattern.toLowerCase()) ||
+                        eventImageType === stationId;
+
+                    if (!stationMatch) return false;
+
+                    // Check date overlap
+                    const eventStartDate = eventStart.substring(0, 10);
+                    const eventEndDate = eventEnd.substring(0, 10);
+                    
+                    return (eventStartDate <= endDate && eventEndDate >= startDate);
+                });
+            } catch (error) {
+                console.warn('Could not fetch maintenance data:', error);
+                return [];
+            }
+        }
+
+        async function fetchAvailabilityData(station, startDate, endDate) {
+            const data = {};
+            const start = new Date(startDate + 'T00:00:00');
+            const end = new Date(endDate + 'T00:00:00');
+            
+            const filePattern = station.filePattern || station.name;
+
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                const dateStr = formatDateForFile(d);
+                const fileName = `${dateStr}_${filePattern}.json`;
+                // Use relative path matching the actual folder structure [3]
+                const filePath = `${station.dataSource}/${fileName}`;
+
+                try {
+                    const response = await fetch(filePath);
+                    if (response.ok) {
+                        const json = await response.json();
+                        data[formatDate(d)] = json;
+                    } else {
+                        data[formatDate(d)] = null;
+                    }
+                } catch (error) {
+                    data[formatDate(d)] = null;
+                }
+            }
+
+            return data;
+        }
+
+        function formatDateForFile(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}${m}${d}`;
+        }
+
+        // ============ SLOT CALCULATION ============
+        function getSlotTimestampsForDay(dateStr, slotsPerDay) {
+            const timestamps = [];
+            const intervalMinutes = 1440 / slotsPerDay; // minutes per slot
+            
+            for (let i = 0; i < slotsPerDay; i++) {
+                const minutes = i * intervalMinutes;
+                const hours = Math.floor(minutes / 60);
+                const mins = minutes % 60;
+                const timeStr = `${String(hours).padStart(2, '0')}${String(mins).padStart(2, '0')}`;
+                timestamps.push(`${dateStr.replace(/-/g, '')}${timeStr}`);
+            }
+
+            return timestamps;
+        }
+
+        function isSlotInMaintenance(slotTimestamp, maintenanceEvents) {
+            for (const event of maintenanceEvents) {
+                const eventStart = (event.startTime || event.start_time || '').replace(/[-:\s]/g, '').substring(0, 12);
+                const eventEnd = (event.endTime || event.end_time || '').replace(/[-:\s]/g, '').substring(0, 12);
+                
+                if (slotTimestamp >= eventStart && slotTimestamp < eventEnd) {
+                    return event;
+                }
+            }
+            return null;
+        }
+
+        function classifyMaintenanceSlot(slotTimestamp, maintenanceEvents) {
+            const event = isSlotInMaintenance(slotTimestamp, maintenanceEvents);
+            if (!event) return null;
+
+            const eventType = (event.eventType || event.event_type || '').toLowerCase();
+            
+            if (eventType.includes('preventive')) return 'preventive';
+            if (eventType.includes('corrective')) return 'non-preventive';
+            if (eventType.includes('other')) return 'non-preventive';
+            if (eventType.includes('data restoration') || eventType.includes('restoration')) return 'restoration';
+            
+            return 'non-preventive';
+        }
+
+        function calculateDayStats(dateStr, slotsPerDay, maintenanceEvents) {
+            const dayData = availabilityData[dateStr];
+            const foundSlots = dayData && dayData.found_slots ? dayData.found_slots : [];
+            const allTimestamps = getSlotTimestampsForDay(dateStr, slotsPerDay);
+
+            let expected = slotsPerDay;
+            let found = foundSlots.length;
+            let missingExclMaintenance = 0;
+            let preventiveSlots = 0;
+            let nonPreventiveSlots = 0;
+
+            for (let i = 0; i < slotsPerDay; i++) {
+                const timestamp = allTimestamps[i];
+                const maintenanceType = classifyMaintenanceSlot(timestamp, maintenanceEvents);
+
+                if (maintenanceType === 'restoration') {
+                    // Data restoration: slot counts as found regardless
+                    if (!foundSlots.includes(i)) {
+                        found++; // Add back as found
+                    }
+                } else if (maintenanceType === 'preventive') {
+                    preventiveSlots++;
+                } else if (maintenanceType === 'non-preventive') {
+                    nonPreventiveSlots++;
+                } else if (!foundSlots.includes(i)) {
+                    // No data and no maintenance
+                    missingExclMaintenance++;
+                }
+            }
+
+            return {
+                date: dateStr,
+                expected,
+                found,
+                missingExclMaintenance,
+                preventiveSlots,
+                nonPreventiveSlots,
+                basicAvailability: expected > 0 ? (found / expected) * 100 : 0,
+                adjustedExpected: expected - preventiveSlots,
+                adjustedAvailability: (expected - preventiveSlots) > 0 
+                    ? (found / (expected - preventiveSlots)) * 100 
+                    : 0
+            };
+        }
+
+        // ============ VIEW PROCESSORS ============
+        function processDailyView(startDate, endDate, slotsPerDay) {
+            const rows = [];
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                const dateStr = formatDate(d);
+                const stats = calculateDayStats(dateStr, slotsPerDay, maintenanceData);
+                rows.push({
+                    period: dateStr,
+                    ...stats
+                });
+            }
+
+            return rows;
+        }
+
+        function processMonthlyView(startDate, endDate, slotsPerDay) {
+            const monthlyData = {};
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                const dateStr = formatDate(d);
+                const monthKey = dateStr.substring(0, 7); // YYYY-MM
+                
+                if (!monthlyData[monthKey]) {
+                    monthlyData[monthKey] = {
+                        period: monthKey,
+                        expected: 0,
+                        found: 0,
+                        missingExclMaintenance: 0,
+                        preventiveSlots: 0,
+                        nonPreventiveSlots: 0
+                    };
+                }
+
+                const stats = calculateDayStats(dateStr, slotsPerDay, maintenanceData);
+                monthlyData[monthKey].expected += stats.expected;
+                monthlyData[monthKey].found += stats.found;
+                monthlyData[monthKey].missingExclMaintenance += stats.missingExclMaintenance;
+                monthlyData[monthKey].preventiveSlots += stats.preventiveSlots;
+                monthlyData[monthKey].nonPreventiveSlots += stats.nonPreventiveSlots;
+            }
+
+            return Object.values(monthlyData).map(m => ({
+                ...m,
+                basicAvailability: m.expected > 0 ? (m.found / m.expected) * 100 : 0,
+                adjustedExpected: m.expected - m.preventiveSlots,
+                adjustedAvailability: (m.expected - m.preventiveSlots) > 0 
+                    ? (m.found / (m.expected - m.preventiveSlots)) * 100 
+                    : 0
+            }));
+        }
+
+        function processQuarterlyView(startDate, endDate, slotsPerDay) {
+            const quarterlyData = {};
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                const dateStr = formatDate(d);
+                const quarter = Math.floor(d.getMonth() / 3) + 1;
+                const year = d.getFullYear();
+                const quarterKey = `${year}-Q${quarter}`;
+                
+                if (!quarterlyData[quarterKey]) {
+                    quarterlyData[quarterKey] = {
+                        period: quarterKey,
+                        expected: 0,
+                        found: 0,
+                        missingExclMaintenance: 0,
+                        preventiveSlots: 0,
+                        nonPreventiveSlots: 0
+                    };
+                }
+
+                const stats = calculateDayStats(dateStr, slotsPerDay, maintenanceData);
+                quarterlyData[quarterKey].expected += stats.expected;
+                quarterlyData[quarterKey].found += stats.found;
+                quarterlyData[quarterKey].missingExclMaintenance += stats.missingExclMaintenance;
+                quarterlyData[quarterKey].preventiveSlots += stats.preventiveSlots;
+                quarterlyData[quarterKey].nonPreventiveSlots += stats.nonPreventiveSlots;
+            }
+
+            return Object.values(quarterlyData).map(q => ({
+                ...q,
+                basicAvailability: q.expected > 0 ? (q.found / q.expected) * 100 : 0,
+                adjustedExpected: q.expected - q.preventiveSlots,
+                adjustedAvailability: (q.expected - q.preventiveSlots) > 0 
+                    ? (q.found / (q.expected - q.preventiveSlots)) * 100 
+                    : 0
+            }));
+        }
+
+        function processYearlyView(startDate, endDate, slotsPerDay) {
+            const yearlyData = {};
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                const dateStr = formatDate(d);
+                const yearKey = d.getFullYear().toString();
+                
+                if (!yearlyData[yearKey]) {
+                    yearlyData[yearKey] = {
+                        period: yearKey,
+                        expected: 0,
+                        found: 0,
+                        missingExclMaintenance: 0,
+                        preventiveSlots: 0,
+                        nonPreventiveSlots: 0
+                    };
+                }
+
+                const stats = calculateDayStats(dateStr, slotsPerDay, maintenanceData);
+                yearlyData[yearKey].expected += stats.expected;
+                yearlyData[yearKey].found += stats.found;
+                yearlyData[yearKey].missingExclMaintenance += stats.missingExclMaintenance;
+                yearlyData[yearKey].preventiveSlots += stats.preventiveSlots;
+                yearlyData[yearKey].nonPreventiveSlots += stats.nonPreventiveSlots;
+            }
+
+            return Object.values(yearlyData).map(y => ({
+                ...y,
+                basicAvailability: y.expected > 0 ? (y.found / y.expected) * 100 : 0,
+                adjustedExpected: y.expected - y.preventiveSlots,
+                adjustedAvailability: (y.expected - y.preventiveSlots) > 0 
+                    ? (y.found / (y.expected - y.preventiveSlots)) * 100 
+                    : 0
+            }));
+        }
+
+        // ============ SUMMARY CALCULATION ============
+        function calculateSummary(rows, slotsPerDay) {
+            let totalExpected = 0;
+            let totalFound = 0;
+            let totalMissingExclMaint = 0;
+            let totalPreventive = 0;
+            let totalNonPreventive = 0;
+
+            rows.forEach(row => {
+                totalExpected += row.expected;
+                totalFound += row.found;
+                totalMissingExclMaint += row.missingExclMaintenance;
+                totalPreventive += row.preventiveSlots;
+                totalNonPreventive += row.nonPreventiveSlots;
+            });
+
+            const basicAvail = totalExpected > 0 ? (totalFound / totalExpected) * 100 : 0;
+            const adjustedExpected = totalExpected - totalPreventive;
+            const adjustedAvail = adjustedExpected > 0 ? (totalFound / adjustedExpected) * 100 : 0;
+
+            return {
+                totalExpected,
+                totalFound,
+                totalMissingExclMaint,
+                totalPreventive,
+                totalNonPreventive,
+                basicAvail,
+                adjustedExpected,
+                adjustedAvail,
+                totalDays: rows.length
+            };
+        }
+
+        // ============ RENDERING ============
+        function getAvailabilityClass(percentage) {
+            if (percentage >= 99) return 'avail-high';
+            if (percentage >= 95) return 'avail-medium';
+            return 'avail-low';
+        }
+
+        function renderResults(summary, rows, viewMode, slotsPerDay) {
+            let html = '';
+
+            // Summary Panel
+            html += '<div class="summary-stats">';
+            html += `
+                <div class="stat-card">
+                    <div class="stat-label">Total Expected Slots</div>
+                    <div class="stat-value">${summary.totalExpected.toLocaleString()}</div>
+                    <div class="stat-detail">${summary.totalDays} days × ${slotsPerDay} slots/day</div>
+                </div>
+            `;
+            html += `
+                <div class="stat-card">
+                    <div class="stat-label">Missing Data Slots (excl. maintenance)</div>
+                    <div class="stat-value">${summary.totalMissingExclMaint.toLocaleString()}</div>
+                </div>
+            `;
+            html += `
+                <div class="stat-card warning">
+                    <div class="stat-label">Non-Preventive Maintenance Slots</div>
+                    <div class="stat-value">${summary.totalNonPreventive.toLocaleString()}</div>
+                </div>
+            `;
+            html += `
+                <div class="stat-card warning">
+                    <div class="stat-label">Preventive Maintenance Slots</div>
+                    <div class="stat-value">${summary.totalPreventive.toLocaleString()}</div>
+                </div>
+            `;
+            html += `
+                <div class="stat-card success">
+                    <div class="stat-label">Found Data Slots</div>
+                    <div class="stat-value">${summary.totalFound.toLocaleString()}</div>
+                    <div class="stat-detail">${summary.totalExpected.toLocaleString()} − ${summary.totalMissingExclMaint} − ${summary.totalNonPreventive} − ${summary.totalPreventive} = ${summary.totalFound.toLocaleString()}</div>
+                </div>
+            `;
+            html += `
+                <div class="stat-card">
+                    <div class="stat-label">Basic Availability</div>
+                    <div class="stat-value ${getAvailabilityClass(summary.basicAvail)}">${summary.basicAvail.toFixed(2)}%</div>
+                    <div class="stat-detail">${summary.totalFound.toLocaleString()} / ${summary.totalExpected.toLocaleString()}</div>
+                </div>
+            `;
+            html += `
+                <div class="stat-card info">
+                    <div class="stat-label">Expected Minus Preventive</div>
+                    <div class="stat-value">${summary.adjustedExpected.toLocaleString()}</div>
+                    <div class="stat-detail">${summary.totalExpected.toLocaleString()} − ${summary.totalPreventive} = ${summary.adjustedExpected.toLocaleString()}</div>
+                </div>
+            `;
+            html += `
+                <div class="stat-card success">
+                    <div class="stat-label">Adjusted Availability (Excl. Preventive)</div>
+                    <div class="stat-value ${getAvailabilityClass(summary.adjustedAvail)}">${summary.adjustedAvail.toFixed(2)}%</div>
+                    <div class="stat-detail">${summary.totalFound.toLocaleString()} / ${summary.adjustedExpected.toLocaleString()}</div>
+                </div>
+            `;
+            html += '</div>';
+
+            // Table
+            html += '<div class="table-container"><table>';
+            html += '<thead><tr>';
+            html += '<th>Period</th>';
+            html += '<th>Expected Slots</th>';
+            html += '<th>Prev. Maint.</th>';
+            html += '<th>Non-Prev. Maint.</th>';
+            html += '<th>Missing (excl. maint.)</th>';
+            html += '<th>Found Slots</th>';
+            html += '<th>Basic Avail.</th>';
+            html += '<th>Adj. Expected</th>';
+            html += '<th>Adjusted Avail.</th>';
+            html += '</tr></thead><tbody>';
+
+            rows.forEach(row => {
+                html += '<tr>';
+                html += `<td><strong>${row.period}</strong></td>`;
+                html += `<td>${row.expected.toLocaleString()}</td>`;
+                html += `<td>${row.preventiveSlots.toLocaleString()}</td>`;
+                html += `<td>${row.nonPreventiveSlots.toLocaleString()}</td>`;
+                html += `<td>${row.missingExclMaintenance.toLocaleString()}</td>`;
+                html += `<td>${row.found.toLocaleString()}</td>`;
+                html += `<td class="${getAvailabilityClass(row.basicAvailability)}">${row.basicAvailability.toFixed(2)}%</td>`;
+                html += `<td>${row.adjustedExpected.toLocaleString()}</td>`;
+                html += `<td class="${getAvailabilityClass(row.adjustedAvailability)}">${row.adjustedAvailability.toFixed(2)}%</td>`;
+                html += '</tr>';
+            });
+
+            html += '</tbody></table></div>';
+
+            document.getElementById('resultsContent').innerHTML = html;
+        }
+    </script>
+</body>
+</html>
