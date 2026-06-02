@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Station Availability Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-base: #fafafa;
+            --bg-surface: #ffffff;
+            --bg-elevated: #f5f5f5;
+            --text-primary: #1a1a2e;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border: #e2e8f0;
+            --accent: #0066ff;
+            --accent-soft: #e6f0ff;
+            --success: #10b981;
+            --success-soft: #d1fae5;
+            --warning: #f59e0b;
+            --warning-soft: #fef3c7;
+            --danger: #ef4444;
+            --danger-soft: #fee2e2;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+        }
+
+        .dark {
+            --bg-base: #0f172a;
+            --bg-surface: #1e293b;
+            --bg-elevated: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: #334155;
+            --accent: #3b82f6;
+            --accent-soft: rgba(59, 130, 246, 0.15);
+            --success: #34d399;
+            --success-soft: rgba(52, 211, 153, 0.15);
+            --warning: #fbbf24;
+            --warning-soft: rgba(251, 191, 36, 0.15);
+            --danger: #f87171;
+            --danger-soft: rgba(248, 113, 113, 0.15);
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', system-ui, sans-serif;
+            background: var(--bg-base);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px 16px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .header h1 {
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .card-header h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-header h2 i {
+            color: var(--accent);
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 16px;
+            font-family: 'IBM Plex Mono', monospace;
+            transition: all 0.15s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-soft);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .quick-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .quick-select-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .quick-btn {
+            padding: 6px 12px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-family: inherit;
+        }
+
+        .quick-btn:hover {
+            background: var(--accent-soft);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .quick-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            background: var(--bg-elevated);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            font-family: 'IBM Plex Mono', monospace;
+            line-height: 1.2;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+
+        .stat-excellent { color: var(--success); }
+        .stat-good { color: var(--accent); }
+        .stat-warning { color: var(--warning); }
+        .stat-danger { color: var(--danger); }
+
+        /* Calculation breakdown section */
+        .calculation-breakdown {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: var(--bg-elevated);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+        }
+
+        .breakdown-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .breakdown-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .breakdown-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            font-family: 'IBM Plex Mono', monospace;
+            color: var(--text-primary);
+        }
+
+        .breakdown-formula {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            font-family: 'IBM Plex Mono', monospace;
+            margin-top: 2px;
+            line-height: 1.2;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg-elevated);
+            font-weight: 600;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tbody tr:hover {
+            background: var(--accent-soft);
+        }
+
+        td {
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .period-cell {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .availability-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bar-track {
+            flex: 1;
+            height: 6px;
+            background: var(--bg-elevated);
+            border-radius: 3px;
+            overflow: hidden;
+            min-width: 80px;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .bar-fill.excellent { background: var(--success); }
+        .bar-fill.good { background: var(--accent); }
+        .bar-fill.warning { background: var(--warning); }
+        .bar-fill.danger { background: var(--danger); }
+
+        .bar-value {
+            min-width: 55px;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: var(--border);
+            margin-bottom: 16px;
+        }
+
+        .empty-state h3 {
+            font-size: 1.1rem;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .loading-progress {
+            color: var(--accent);
+            font-family: 'IBM Plex Mono', monospace;
+            font-weight: 600;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-surface);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .modal-content h4 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+        }
+
+        .modal-content p {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .btn-secondary {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .info-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--bg-elevated);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-left: auto;
+        }
+
+        .info-badge i {
+            color: var(--accent);
+        }
+
+        .station-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--accent-soft);
+            color: var(--accent);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        #stationDescription {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-style: italic;
+            align-self: center;
+            max-width: 600px;
+        }
+
+        .expandable-row {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .expandable-row:hover {
+            background: var(--accent-soft) !important;
+        }
+
+        .details-row {
+            display: none;
+        }
+
+        .details-row.show {
+            display: table-row;
+        }
+
+        .details-cell {
+            padding: 12px 16px;
+            background: var(--bg-elevated);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .details-content {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            font-size: 0.85rem;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .detail-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            font-weight: 600;
+        }
+
+        .detail-value {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .stats-grid .stat-item {
+            animation: fadeIn 0.3s ease-out backwards;
+        }
+
+        .stats-grid .stat-item:nth-child(1) { animation-delay: 0.05s; }
+        .stats-grid .stat-item:nth-child(2) { animation-delay: 0.1s; }
+        .stats-grid .stat-item:nth-child(3) { animation-delay: 0.15s; }
+        .stats-grid .stat-item:nth-child(4) { animation-delay: 0.2s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Station Availability Dashboard</h1>
+        </header>
+
+        <!-- Station & Controls -->
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-sliders-h"></i> Configuration</h2>
+                <div class="station-badge" id="stationBadge">
+                    <i class="fas fa-satellite-dish"></i>
+                    <span id="stationName">Loading...</span>
+                </div>
+                <div id="stationDescription"></div>
+            </div>
+            <div class="card-body">
+                <div class="controls-grid">
+                    <div class="form-group">
+                        <label>Station</label>
+                        <select id="stationSelect">
+                            <option value="">Loading stations...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Start Date (HKT)</label>
+                        <input type="date" id="startDate">
+                    </div>
+                    <div class="form-group">
+                        <label>End Date (HKT)</label>
+                        <input type="date" id="endDate">
+                    </div>
+                    <div class="form-group">
+                        <label>View Mode</label>
+                        <select id="viewMode">
+                            <option value="daily">Daily</option>
+                            <option value="monthly">Monthly</option>
+                            <option value="quarterly">Quarterly</option>
+                            <option value="yearly">Yearly</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="justify-content: flex-end;">
+                        <button class="btn btn-primary" id="calculateBtn">
+                            <i class="fas fa-calculator"></i> Calculate
+                        </button>
+                    </div>
+                </div>
+
+                <div class="quick-select">
+                    <span class="quick-select-label">Quick:</span>
+                    <button class="quick-btn" data-period="today">Today</button>
+                    <button class="quick-btn" data-period="yesterday">Yesterday</button>
+                    <button class="quick-btn" data-period="last7days">Last 7 Days</button>
+                    <button class="quick-btn" data-period="last30days">Last 30 Days</button>
+                    <button class="quick-btn" data-period="thisMonth">This Month</button>
+                    <button class="quick-btn" data-period="lastMonth">Last Month</button>
+                    <button class="quick-btn" data-period="thisQuarter">This Quarter</button>
+                    <button class="quick-btn" data-period="thisYear">This Year</button>
+                    <button class="quick-btn" data-period="allTime">All Time</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Summary -->
+        <div class="stats-grid" id="statsGrid" style="display: none;">
+            <div class="stat-item">
+                <div class="stat-value" id="avgAvailability">--</div>
+                <div class="stat-label">Avg Availability</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="totalRecords">--</div>
+                <div class="stat-label">Found (Valid)</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="expectedRecords">--</div>
+                <div class="stat-label">Expected</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="periodCount">--</div>
+                <div class="stat-label">Periods</div>
+            </div>
+        </div>
+
+        <!-- Calculation Breakdown -->
+        <div class="calculation-breakdown" id="calculationBreakdown" style="display: none;">
+            <div class="breakdown-item">
+                <div class="breakdown-label">Total Expected Slots</div>
+                <div class="breakdown-value" id="totalExpectedSlots">-</div>
+                <div class="breakdown-formula" id="totalExpectedFormula"></div>
+            </div>
+            <div class="breakdown-item">
+                <div class="breakdown-label">Found (Raw)</div>
+                <div class="breakdown-value" id="foundRawSlots">-</div>
+            </div>
+            <div class="breakdown-item">
+                <div class="breakdown-label">During Maint</div>
+                <div class="breakdown-value" id="foundDuringMaintSlots">-</div>
+            </div>
+            <div class="breakdown-item">
+                <div class="breakdown-label">Found (Valid)</div>
+                <div class="breakdown-value" id="foundValidSlots">-</div>
+                <div class="breakdown-formula" id="foundValidFormula"></div>
+            </div>
+            <div class="breakdown-item">
+                <div class="breakdown-label">Preventive Maint</div>
+                <div class="breakdown-value" id="preventiveSlots">-</div>
+            </div>
+            <div class="breakdown-item">
+                <div class="breakdown-label">Expected - Prev</div>
+                <div class="breakdown-value" id="expectedMinusPreventive">-</div>
+                <div class="breakdown-formula" id="expectedMinusPreventiveFormula"></div>
+            </div>
+            <div class="breakdown-item">
+                <div class="breakdown-label">Basic Availability</div>
+                <div class="breakdown-value" id="basicAvailability">-</div>
+                <div class="breakdown-formula" id="basicAvailabilityFormula"></div>
+            </div>
+            <div class="breakdown-item">
+                <div class="breakdown-label">Adjusted Availability</div>
+                <div class="breakdown-value stat-excellent" id="adjustedAvailability">-</div>
+                <div class="breakdown-formula" id="adjustedAvailabilityFormula"></div>
+            </div>
+        </div>
+
+        <!-- Results Table -->
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-table"></i> Availability Results</h2>
+                <div class="info-badge" id="intervalBadge">
+                    <i class="fas fa-clock"></i>
+                    <span id="intervalInfo">Select a station</span>
+                </div>
+            </div>
+            <div class="table-container">
+                <div class="empty-state" id="emptyState">
+                    <i class="fas fa-chart-area"></i>
+                    <h3>No Data Loaded</h3>
+                    <p>Select a station and date range, then click "Calculate" to view availability.</p>
+                </div>
+                <table id="resultsTable" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Period</th>
+                            <th>Availability</th>
+                            <th>Valid</th>
+                            <th>Expected</th>
+                            <th>During Maint</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text">Fetching availability data...</div>
+        <div class="loading-progress" id="loadingProgress">0 / 0</div>
+    </div>
+
+    <!-- Error Modal -->
+    <div class="modal-overlay" id="errorModal">
+        <div class="modal-content">
+            <h4><i class="fas fa-exclamation-circle" style="color: var(--danger);"></i> Error</h4>
+            <p id="errorMessage">An error occurred.</p>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" id="closeModalBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // STATION CONFIGURATION
+        // ============================================================
+        let STATIONS_CONFIG = { stations: [] };
+        const CONFIG_URL = "availability_stations_config.json";
+        const BASE_URL = "http://radsats36";
+        const MAINT_API = "http://radsats36:9000/api/maintenance";
+        const CACHE_VALIDITY_MINUTES = 1;
+
+        async function loadStationsConfig() {
+            try {
+                const response = await fetch(CONFIG_URL);
+                if (!response.ok) throw new Error(`Failed to load config: ${response.status}`);
+                STATIONS_CONFIG = await response.json();
+                return true;
+            } catch (error) {
+                console.error('Config load failed, using fallback:', error.message);
+                STATIONS_CONFIG = {
+                    stations: [
+                        {
+                            id: "Disdrometer",
+                            name: "Disdrometer",
+                            interval: 5,
+                            dataSource: "disdrometer_file_list/avail_data",
+                            filePattern: "RF_rate_past_2hrs",
+                            description: "Disdrometer > Rainfall rate (past 2 hrs)",
+                            timezone: "HKT",
+                            dataStartDate: "2024-04-02"
+                        }
+                    ]
+                };
+                return false;
+            }
+        }
+
+        // ============================================================
+        // STATE
+        // ============================================================
+        let currentStation = null;
+        const cachedData = new Map();
+        let maintenanceData = null;
+
+        // ============================================================
+        // DOM ELEMENTS
+        // ============================================================
+        const stationSelect = document.getElementById('stationSelect');
+        const stationNameSpan = document.getElementById('stationName');
+        const stationDescription = document.getElementById('stationDescription');
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+        const viewModeSelect = document.getElementById('viewMode');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const resultsTable = document.getElementById('resultsTable');
+        const resultsBody = document.getElementById('resultsBody');
+        const emptyState = document.getElementById('emptyState');
+        const statsGrid = document.getElementById('statsGrid');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingProgress = document.getElementById('loadingProgress');
+        const errorModal = document.getElementById('errorModal');
+        const errorMessage = document.getElementById('errorMessage');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const intervalInfo = document.getElementById('intervalInfo');
+        const calculationBreakdown = document.getElementById('calculationBreakdown');
+
+        // ============================================================
+        // INITIALIZATION
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', async () => {
+            initializeDarkMode();
+            await loadStationsConfig();
+            await loadMaintenanceData();
+            initializeStations();
+            setupEventListeners();
+        });
+
+        function initializeDarkMode() {
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            }
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+                document.documentElement.classList.toggle('dark', event.matches);
+            });
+        }
+
+        async function loadMaintenanceData() {
+            try {
+                const response = await fetch(MAINT_API);
+                if (response.ok) {
+                    maintenanceData = await response.json();
+                    console.log(`✓ Maintenance data loaded: ${maintenanceData.length} records`);
+                } else {
+                    console.warn('Maintenance API returned status:', response.status);
+                    maintenanceData = [];
+                }
+            } catch (error) {
+                console.error('✗ Failed to load maintenance data:', error);
+                maintenanceData = [];
+            }
+        }
+
+        function initializeStations() {
+            stationSelect.innerHTML = '';
+            STATIONS_CONFIG.stations.forEach(station => {
+                const option = document.createElement('option');
+                option.value = station.id;
+                option.textContent = station.name;
+                stationSelect.appendChild(option);
+            });
+
+            if (STATIONS_CONFIG.stations.length > 0) {
+                selectStation(STATIONS_CONFIG.stations[0].id);
+            }
+        }
+
+        function selectStation(stationId) {
+            currentStation = STATIONS_CONFIG.stations.find(s => s.id === stationId);
+            if (!currentStation) return;
+
+            stationSelect.value = stationId;
+            stationNameSpan.textContent = currentStation.name;
+
+            if (currentStation.description) {
+                stationDescription.textContent = currentStation.description;
+                stationDescription.style.display = 'block';
+            } else {
+                stationDescription.style.display = 'none';
+            }
+
+            const recordsPerDay = (24 * 60) / currentStation.interval;
+            intervalInfo.textContent = `${currentStation.name} · ${currentStation.interval}-min interval (${recordsPerDay}/day)`;
+
+            initializeDateInputs();
+            cachedData.clear();
+        }
+
+        function initializeDateInputs() {
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+
+            const dataStartDate = new Date(currentStation.dataStartDate);
+            const todayStr = formatDateForInput(today);
+            const startMinStr = formatDateForInput(dataStartDate);
+
+            startDateInput.min = startMinStr;
+            startDateInput.max = todayStr;
+            endDateInput.min = startMinStr;
+            endDateInput.max = todayStr;
+
+            startDateInput.value = formatDateForInput(yesterday);
+            endDateInput.value = formatDateForInput(yesterday);
+        }
+
+        function setupEventListeners() {
+            stationSelect.addEventListener('change', () => selectStation(stationSelect.value));
+            calculateBtn.addEventListener('click', calculateAvailability);
+
+            document.querySelectorAll('.quick-btn').forEach(btn => {
+                btn.addEventListener('click', () => handleQuickSelect(btn.dataset.period));
+            });
+
+            startDateInput.addEventListener('change', validateDateRange);
+            endDateInput.addEventListener('change', validateDateRange);
+
+            closeModalBtn.addEventListener('click', closeModal);
+            errorModal.addEventListener('click', (e) => {
+                if (e.target === errorModal) closeModal();
+            });
+        }
+
+        function validateDateRange() {
+            const start = new Date(startDateInput.value);
+            const end = new Date(endDateInput.value);
+            if (start > end) {
+                endDateInput.value = startDateInput.value;
+            }
+        }
+
+        function handleQuickSelect(period) {
+            document.querySelectorAll('.quick-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[data-period="${period}"]`).classList.add('active');
+
+            const today = new Date();
+            const todayStr = formatDateForInput(today);
+            const dataStartDate = new Date(currentStation.dataStartDate);
+            let startDate, endDate;
+
+            switch (period) {
+                case 'today':
+                    startDate = endDate = todayStr;
+                    viewModeSelect.value = 'daily';
+                    break;
+                case 'yesterday': {
+                    const yesterday = new Date(today);
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    startDate = endDate = formatDateForInput(yesterday);
+                    viewModeSelect.value = 'daily';
+                    break;
+                }
+                case 'last7days': {
+                    const last7 = new Date(today);
+                    last7.setDate(last7.getDate() - 6);
+                    startDate = formatDateForInput(last7);
+                    endDate = todayStr;
+                    viewModeSelect.value = 'daily';
+                    break;
+                }
+                case 'last30days': {
+                    const last30 = new Date(today);
+                    last30.setDate(last30.getDate() - 29);
+                    startDate = formatDateForInput(last30);
+                    endDate = todayStr;
+                    viewModeSelect.value = 'daily';
+                    break;
+                }
+                case 'thisMonth':
+                    startDate = formatDateForInput(new Date(today.getFullYear(), today.getMonth(), 1));
+                    endDate = todayStr;
+                    viewModeSelect.value = 'daily';
+                    break;
+                case 'lastMonth': {
+                    const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                    const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+                    startDate = formatDateForInput(lastMonthStart);
+                    endDate = formatDateForInput(lastMonthEnd);
+                    viewModeSelect.value = 'daily';
+                    break;
+                }
+                case 'thisQuarter': {
+                    const quarterStart = new Date(today.getFullYear(), Math.floor(today.getMonth() / 3) * 3, 1);
+                    startDate = formatDateForInput(quarterStart);
+                    endDate = todayStr;
+                    viewModeSelect.value = 'monthly';
+                    break;
+                }
+                case 'thisYear':
+                    startDate = formatDateForInput(new Date(today.getFullYear(), 0, 1));
+                    endDate = todayStr;
+                    viewModeSelect.value = 'monthly';
+                    break;
+                case 'allTime':
+                    startDate = formatDateForInput(dataStartDate);
+                    endDate = todayStr;
+                    viewModeSelect.value = 'monthly';
+                    break;
+            }
+
+            if (new Date(startDate) < dataStartDate) {
+                startDate = formatDateForInput(dataStartDate);
+            }
+
+            startDateInput.value = startDate;
+            endDateInput.value = endDate;
+        }
+
+        // ============================================================
+        // DATE UTILITIES
+        // ============================================================
+        function formatDateForInput(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function formatDateYYYYMMDD(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}${month}${day}`;
+        }
+
+        function getDateRange(startDate, endDate) {
+            const dates = [];
+            const startTime = startDate.getTime();
+            const endTime = endDate.getTime();
+            const dayMs = 24 * 60 * 60 * 1000;
+
+            for (let time = startTime; time <= endTime; time += dayMs) {
+                dates.push(new Date(time));
+            }
+            return dates;
+        }
+
+        // ============================================================
+        // DATA FETCHING
+        // ============================================================
+        async function fetchDailyData(dateStr) {
+            const cacheKey = `${currentStation.id}_${dateStr}`;
+
+            if (cachedData.has(cacheKey)) {
+                const cached = cachedData.get(cacheKey);
+                const todayStr = formatDateYYYYMMDD(new Date());
+
+                if (dateStr === todayStr) {
+                    if (cached.timestamp && (Date.now() - cached.timestamp) < CACHE_VALIDITY_MINUTES * 60 * 1000) {
+                        return cached;
+                    }
+                } else {
+                    return cached;
+                }
+            }
+
+            const url = `${BASE_URL}/${currentStation.dataSource}/${dateStr}_${currentStation.filePattern}.json`;
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        const result = { count: 0, found: false, timestamps: [], timestamp: Date.now() };
+                        cachedData.set(cacheKey, result);
+                        return result;
+                    }
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                const timestamps = data.found_timestamps || [];
+                const result = {
+                    count: timestamps.length,
+                    found: true,
+                    timestamps: timestamps,
+                    timestamp: Date.now()
+                };
+                cachedData.set(cacheKey, result);
+                return result;
+            } catch (error) {
+                console.error(`✗ Error fetching ${dateStr}:`, error);
+                return { count: 0, found: false, timestamps: [], timestamp: Date.now() };
+            }
+        }
+
+        // ============================================================
+        // TIMESTAMP PARSING & FILTERING
+        // ============================================================
+        function parseTimestamp(tsStr) {
+            // Format: "2605261330" = 2026-05-26 13:30
+            // YYMMDDhhmm (10 digits)
+            if (typeof tsStr !== 'string' || tsStr.length < 10) return null;
+            
+            try {
+                const yy = parseInt(tsStr.slice(0, 2), 10) + 2000;
+                const mm = parseInt(tsStr.slice(2, 4), 10);
+                const dd = parseInt(tsStr.slice(4, 6), 10);
+                const hh = parseInt(tsStr.slice(6, 8), 10);
+                const min = parseInt(tsStr.slice(8, 10), 10);
+                
+                return new Date(yy, mm - 1, dd, hh, min, 0, 0);
+            } catch (e) {
+                console.warn(`✗ Failed to parse timestamp: ${tsStr}`);
+                return null;
+            }
+        }
+
+        function parseMaintenanceDatetime(s) {
+            if (!s) return null;
+            try {
+                let t = String(s).trim().replace('T', ' ');
+                const parts = t.split(' ');
+                if (parts.length >= 2) {
+                    let datePart = parts[0], timePart = parts[1];
+                    if (timePart.length === 5) timePart += ":00";
+                    const d = new Date((datePart + " " + timePart).replace(/-/g, '/'));
+                    if (!isNaN(d.getTime())) return d;
+                }
+                const dt = new Date(t);
+                if (!isNaN(dt.getTime())) return dt;
+            } catch (e) {
+                console.warn('✗ Failed to parse datetime:', s);
+            }
+            return null;
+        }
+
+        function getMaintenancePeriodsForDate(dateStr) {
+            const periods = [];
+
+            if (!maintenanceData || maintenanceData.length === 0) {
+                return periods;
+            }
+
+            // Parse target date
+            const year = parseInt(dateStr.slice(0, 4), 10);
+            const month = parseInt(dateStr.slice(4, 6), 10) - 1;
+            const day = parseInt(dateStr.slice(6, 8), 10);
+            
+            const dateStart = new Date(year, month, day, 0, 0, 0, 0);
+            const dateEnd = new Date(year, month, day, 23, 59, 59, 999);
+
+            // Collect all maintenance periods that overlap with this date
+            for (const rec of maintenanceData) {
+                try {
+                    const recType = String(rec.type || '').toLowerCase().trim();
+                    if (recType === 'data restoration') continue;
+
+                    const start = parseMaintenanceDatetime(rec.startDate);
+                    const end = parseMaintenanceDatetime(rec.endDate);
+
+                    if (!start || !end) continue;
+
+                    // Check if maintenance overlaps with this date
+                    if (end <= dateStart || start >= dateEnd) continue;
+
+                    // Calculate overlap period
+                    const mStart = start > dateStart ? start : dateStart;
+                    const mEnd = end < dateEnd ? end : dateEnd;
+
+                    if (mStart >= mEnd) continue;
+
+                    periods.push({ start: mStart, end: mEnd, type: rec.type });
+
+                } catch (e) {
+                    console.warn(`✗ Error processing maintenance record:`, rec, e);
+                }
+            }
+
+            return periods;
+        }
+
+        function isTimestampDuringMaintenance(timestamp, maintenancePeriods) {
+            for (const period of maintenancePeriods) {
+                if (timestamp >= period.start && timestamp < period.end) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function filterFoundTimestamps(timestamps, dateStr) {
+            const maintenancePeriods = getMaintenancePeriodsForDate(dateStr);
+            let foundValid = 0;
+            let foundDuringMaint = 0;
+
+            for (const ts of timestamps) {
+                const datetime = parseTimestamp(ts);
+                if (!datetime) continue;
+
+                if (isTimestampDuringMaintenance(datetime, maintenancePeriods)) {
+                    foundDuringMaint++;
+                } else {
+                    foundValid++;
+                }
+            }
+
+            return {
+                total: timestamps.length,
+                valid: foundValid,
+                duringMaintenance: foundDuringMaint
+            };
+        }
+
+        // ============================================================
+        // CALCULATION & RENDERING
+        // ============================================================
+        async function calculateAvailability() {
+            const startDate = new Date(startDateInput.value);
+            const endDate = new Date(endDateInput.value);
+            const viewMode = viewModeSelect.value;
+
+            if (startDate > endDate) {
+                showError('Start date must be before end date');
+                return;
+            }
+
+            showLoading();
+
+            try {
+                const results = await aggregateData(startDate, endDate, viewMode);
+                renderResults(results);
+                calculationBreakdown.style.display = 'grid';
+            } catch (error) {
+                showError(error.message);
+                console.error('✗ Calculation error:', error);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function aggregateData(startDate, endDate, viewMode) {
+            const results = [];
+            const dates = getDateRange(startDate, endDate);
+            let totalProgress = 0;
+            const totalDates = dates.length;
+            const slotsPerDay = (24 * 60) / currentStation.interval;
+
+            for (const date of dates) {
+                totalProgress++;
+                loadingProgress.textContent = `${totalProgress} / ${totalDates}`;
+
+                const dateStr = formatDateYYYYMMDD(date);
+                const dailyData = await fetchDailyData(dateStr);
+                
+                // Filter timestamps: separate valid from those during maintenance
+                const filtered = filterFoundTimestamps(dailyData.timestamps, dateStr);
+
+                results.push({
+                    date: date,
+                    dateStr: dateStr,
+                    foundRaw: Number(filtered.total) || 0,
+                    foundValid: Number(filtered.valid) || 0,
+                    foundDuringMaint: Number(filtered.duringMaintenance) || 0,
+                    expected: Number(slotsPerDay) || 0,
+                    maintenancePeriods: getMaintenancePeriodsForDate(dateStr)
+                });
+            }
+
+            return aggregateByViewMode(results, viewMode);
+        }
+
+        function aggregateByViewMode(dailyResults, viewMode) {
+            if (viewMode === 'daily') {
+                return dailyResults;
+            }
+
+            const aggregated = [];
+            let currentGroup = null;
+            let groupData = null;
+
+            for (const daily of dailyResults) {
+                let groupKey;
+                if (viewMode === 'monthly') {
+                    groupKey = daily.date.getFullYear() + '-' + String(daily.date.getMonth() + 1).padStart(2, '0');
+                } else if (viewMode === 'quarterly') {
+                    const quarter = Math.floor(daily.date.getMonth() / 3) + 1;
+                    groupKey = daily.date.getFullYear() + '-Q' + quarter;
+                } else if (viewMode === 'yearly') {
+                    groupKey = String(daily.date.getFullYear());
+                }
+
+                if (groupKey !== currentGroup) {
+                    if (groupData) {
+                        aggregated.push(groupData);
+                    }
+                    currentGroup = groupKey;
+                    groupData = {
+                        period: groupKey,
+                        date: new Date(daily.date),
+                        foundRaw: 0,
+                        foundValid: 0,
+                        foundDuringMaint: 0,
+                        expected: 0,
+                        dayCount: 0
+                    };
+                }
+
+                groupData.foundRaw += daily.foundRaw;
+                groupData.foundValid += daily.foundValid;
+                groupData.foundDuringMaint += daily.foundDuringMaint;
+                groupData.expected += daily.expected;
+                groupData.dayCount++;
+            }
+
+            if (groupData) {
+                aggregated.push(groupData);
+            }
+
+            console.log('Aggregated data:', aggregated);
+            return aggregated;
+        }
+
+        function renderResults(results) {
+            resultsBody.innerHTML = '';
+            
+            let totalRaw = 0;
+            let totalValid = 0;
+            let totalDuringMaint = 0;
+            let totalExpected = 0;
+            let totalPreventive = 0;
+
+            results.forEach((row, idx) => {
+                const raw = Number(row.foundRaw) || 0;
+                const valid = Number(row.foundValid) || 0;
+                const duringMaint = Number(row.foundDuringMaint) || 0;
+                const expected = Number(row.expected) || 0;
+
+                // Calculate preventive maintenance slots from periods
+                let preventiveSlots = 0;
+                for (const period of row.maintenancePeriods) {
+                    if (String(period.type || '').toLowerCase().trim() === 'preventive maintenance') {
+                        const minutes = Math.ceil((period.end - period.start) / (1000 * 60));
+                        preventiveSlots += Math.ceil(minutes / currentStation.interval);
+                    }
+                }
+
+                const basicAvail = expected > 0 ? ((valid / expected) * 100).toFixed(2) : 0;
+                const expectedMinusPreventive = Math.max(0, expected - preventiveSlots);
+                const adjustedAvail = expectedMinusPreventive > 0 ? ((valid / expectedMinusPreventive) * 100).toFixed(2) : 0;
+
+                totalRaw += raw;
+                totalValid += valid;
+                totalDuringMaint += duringMaint;
+                totalExpected += expected;
+                totalPreventive += preventiveSlots;
+
+                const rowHtml = `
+                    <tr class="expandable-row" data-row="${idx}">
+                        <td class="period-cell">${row.period || row.date.toLocaleDateString()}</td>
+                        <td>
+                            <div class="availability-bar">
+                                <div class="bar-track">
+                                    <div class="bar-fill ${getAvailabilityClass(adjustedAvail)}" style="width: ${Math.min(100, adjustedAvail)}%"></div>
+                                </div>
+                                <div class="bar-value">${adjustedAvail}%</div>
+                            </div>
+                        </td>
+                        <td>${valid}</td>
+                        <td>${expected}</td>
+                        <td>${duringMaint}</td>
+                        <td><i class="fas fa-chevron-down"></i></td>
+                    </tr>
+                    <tr class="details-row" data-row="${idx}">
+                        <td colspan="6">
+                            <div class="details-cell">
+                                <div class="details-content">
+                                    <div class="detail-item">
+                                        <div class="detail-label">Raw Found</div>
+                                        <div class="detail-value">${raw}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">During Maintenance</div>
+                                        <div class="detail-value">${duringMaint}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Valid Found</div>
+                                        <div class="detail-value">${valid}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Expected - Preventive</div>
+                                        <div class="detail-value">${expectedMinusPreventive}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Adjusted Availability</div>
+                                        <div class="detail-value stat-excellent">${adjustedAvail}%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                resultsBody.insertAdjacentHTML('beforeend', rowHtml);
+            });
+
+            // Add click handlers for expandable rows
+            document.querySelectorAll('.expandable-row').forEach(row => {
+                row.addEventListener('click', () => {
+                    const rowIdx = row.dataset.row;
+                    document.querySelectorAll(`.details-row[data-row="${rowIdx}"]`).forEach(detailRow => {
+                        detailRow.classList.toggle('show');
+                    });
+                    const icon = row.querySelector('i');
+                    icon.style.transform = icon.style.transform === 'rotate(180deg)' ? 'rotate(0deg)' : 'rotate(180deg)';
+                });
+            });
+
+            // Update stats
+            updateStats(results, totalRaw, totalValid, totalDuringMaint, totalExpected, totalPreventive);
+
+            emptyState.style.display = 'none';
+            resultsTable.style.display = 'table';
+            statsGrid.style.display = 'grid';
+        }
+
+        function updateStats(results, totalRaw, totalValid, totalDuringMaint, totalExpected, totalPreventive) {
+            const avgAvail = totalExpected > 0 ? (totalValid / totalExpected * 100).toFixed(2) : 0;
+            const expectedMinusPreventive = Math.max(0, totalExpected - totalPreventive);
+            const adjustedAvail = expectedMinusPreventive > 0 ? (totalValid / expectedMinusPreventive * 100).toFixed(2) : 0;
+
+            document.getElementById('avgAvailability').textContent = adjustedAvail + '%';
+            document.getElementById('totalRecords').textContent = totalValid;
+            document.getElementById('expectedRecords').textContent = totalExpected;
+            document.getElementById('periodCount').textContent = results.length;
+
+            // Calculation breakdown
+            const daysCount = results.reduce((sum, r) => sum + (r.dayCount || 1), 0);
+            const slotsPerDay = (24 * 60) / currentStation.interval;
+            
+            document.getElementById('totalExpectedSlots').textContent = totalExpected;
+            document.getElementById('totalExpectedFormula').textContent = `${daysCount} days × ${slotsPerDay}`;
+            
+            document.getElementById('foundRawSlots').textContent = totalRaw;
+            
+            document.getElementById('foundDuringMaintSlots').textContent = totalDuringMaint;
+            
+            document.getElementById('foundValidSlots').textContent = totalValid;
+            document.getElementById('foundValidFormula').textContent = `${totalRaw} - ${totalDuringMaint}`;
+            
+            document.getElementById('preventiveSlots').textContent = totalPreventive;
+            
+            document.getElementById('expectedMinusPreventive').textContent = expectedMinusPreventive;
+            document.getElementById('expectedMinusPreventiveFormula').textContent = `${totalExpected} - ${totalPreventive}`;
+            
+            document.getElementById('basicAvailability').textContent = avgAvail + '%';
+            document.getElementById('basicAvailabilityFormula').textContent = `${totalValid} / ${totalExpected}`;
+            
+            document.getElementById('adjustedAvailability').textContent = adjustedAvail + '%';
+            document.getElementById('adjustedAvailabilityFormula').textContent = `${totalValid} / ${expectedMinusPreventive}`;
+        }
+
+        function getAvailabilityClass(avail) {
+            const num = parseFloat(avail);
+            if (num >= 99) return 'excellent';
+            if (num >= 95) return 'good';
+            if (num >= 90) return 'warning';
+            return 'danger';
+        }
+
+        // ============================================================
+        // UI UTILITIES
+        // ============================================================
+        function showLoading() {
+            loadingOverlay.classList.add('active');
+        }
+
+        function hideLoading() {
+            loadingOverlay.classList.remove('active');
+        }
+
+        function showError(msg) {
+            errorMessage.textContent = msg;
+            errorModal.classList.add('active');
+        }
+
+        function closeModal() {
+            errorModal.classList.remove('active');
+        }
+    </script>
+</body>
+</html>
